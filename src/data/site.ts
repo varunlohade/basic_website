@@ -3,7 +3,7 @@
 
 export const identity = {
   name: 'Varun Lohade',
-  tagline: 'Engineer · AI, Crypto, Robotics',
+  tagline: 'Engineer · Mobile, AI, Crypto, Robotics',
   shell: 'varun@macbook',
   cwd: '~/varun',
   version: '1.0.0',
@@ -18,6 +18,10 @@ export interface Row {
 }
 
 export const work: Row[] = [
+  {
+    tag: 'mobile',
+    text: 'Flutter — the surface most of his work ships on, [Avici](https://avici.money) included.',
+  },
   {
     tag: 'crypto',
     text: '[Avici.money](https://avici.money) — cofounder, technical founder. On-chain finance.',
@@ -46,7 +50,7 @@ export const contact: Row[] = [
 
 export const about: string[] = [
   identity.blurb,
-  'Cofounder and technical founder at [Avici.money](https://avici.money), building on-chain finance. Before and alongside that: agent tooling, and a robotic arm driven by an LLM.',
+  'Mobile developer by trade — Flutter is where most of what he builds actually lands in people’s hands. Cofounder and technical founder at [Avici.money](https://avici.money), building on-chain finance. Before and alongside that: agent tooling, and a robotic arm driven by an LLM.',
   'The through-line is autonomy — systems that decide and act, whether that’s money moving without a bank in the loop, a bug getting fixed without an engineer in the loop, or an arm figuring out how to pick something up.',
 ];
 
@@ -80,6 +84,14 @@ export const rules: Rule[] = [
     reply: [
       'An LLM-driven robotic arm. Ongoing, unfinished, the fun kind of hard.',
       'Currently working through **Modern Robotics** (Kevin Lynch, Northwestern) to stop guessing at the kinematics.',
+    ],
+  },
+  {
+    any: ['mobile', 'flutter', 'ios', 'android', 'app'],
+    tool: { name: 'Read', arg: 'work/mobile.md', res: 'Read 9 lines' },
+    reply: [
+      'Mobile is his day-to-day surface. He builds in **Flutter**, and [Avici](https://avici.money) ships as a mobile app he owns end to end.',
+      'So most of the AI and on-chain work he does eventually has to survive a phone.',
     ],
   },
   {

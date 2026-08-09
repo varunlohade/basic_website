@@ -201,12 +201,33 @@ function autolink(host: HTMLElement) {
   if (last < source.length) host.appendChild(document.createTextNode(source.slice(last)));
 }
 
+/** Types plain text, parsing no markup — model output is never trusted markup. */
+async function typePlain(host: HTMLElement, s: string, msPerChar = 4) {
+  const node = document.createTextNode('');
+  host.appendChild(node);
+  const chunk = Math.max(1, Math.ceil(s.length / 160));
+
+  for (let i = 0; i < s.length; i += chunk) {
+    if (interrupted) break;
+    node.data = s.slice(0, Math.min(i + chunk, s.length));
+    toBottom();
+    await sleep(msPerChar);
+  }
+  node.data = s;
+  toBottom();
+}
+
 /**
- * Streams a real answer from /api/ask, token by token.
+ * Fetches an answer from /api/ask and types it out.
+ *
+ * Not streamed: the endpoint validates the complete response before returning
+ * it, so there is nothing to show until it has passed. Typing it out client-side
+ * keeps the terminal feel without rendering unvalidated model output.
+ *
  * Returns false if the endpoint is unavailable, so the caller can fall back to
  * the built-in answers — the terminal still works with no model behind it.
  */
-async function streamAnswer(q: string): Promise<boolean> {
+async function askModel(q: string): Promise<boolean> {
   const words = ['Simmering', 'Percolating', 'Noodling', 'Puzzling', 'Ruminating', 'Cogitating'];
   const glyphs = ['✻', '✽', '✳', '∗', '✳', '✽'];
   const word = words[Math.floor(Math.random() * words.length)];
@@ -230,8 +251,6 @@ async function streamAnswer(q: string): Promise<boolean> {
     window.clearInterval(watch);
   };
 
-  let body: HTMLElement | null = null;
-
   try {
     const res = await fetch('/api/ask', {
       method: 'POST',
@@ -240,46 +259,20 @@ async function streamAnswer(q: string): Promise<boolean> {
       signal: ctrl.signal,
     });
 
-    if (!res.ok || !res.body) {
-      cleanup();
-      spinner.remove();
-      return false;
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      if (!chunk) continue;
-
-      // First token: drop the spinner and open the assistant message.
-      if (!body) {
-        spinner.remove();
-        window.clearInterval(tick);
-        const wrap = append(div('msg'));
-        wrap.appendChild(div('msg__dot', '⏺'));
-        body = div('msg__body');
-        wrap.appendChild(body);
-      }
-
-      body.appendChild(document.createTextNode(chunk));
-      toBottom();
-
-      if (interrupted) {
-        await reader.cancel();
-        break;
-      }
-    }
-
     cleanup();
-    if (!body) {
-      spinner.remove();
-      return false; // 200 with an empty body — treat as a miss
-    }
+    spinner.remove();
+
+    if (!res.ok) return false;
+
+    const answer = (await res.text()).trim();
+    if (!answer) return false;
+
+    const wrap = append(div('msg'));
+    wrap.appendChild(div('msg__dot', '⏺'));
+    const body = div('msg__body');
+    wrap.appendChild(body);
+
+    await typePlain(body, answer);
     autolink(body);
     toBottom();
     return true;
@@ -365,7 +358,7 @@ async function render(blocks: Block[]) {
       }
 
       case 'ask': {
-        const answered = await streamAnswer(b.q);
+        const answered = await askModel(b.q);
         if (!answered && !interrupted) await render(offline(b.q));
         break;
       }

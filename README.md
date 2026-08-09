@@ -40,7 +40,7 @@ OpenRouter, or a local Ollama is two env vars — see `.env.example`.
 The endpoint is public and holds an API key, so it's layered:
 
 1. **Rate limit** — 6 requests/min per IP, applied before parsing.
-2. **Daily budget** — `AI_DAILY_LIMIT` (default 50) questions/day site-wide.
+2. **Daily budget** — `AI_DAILY_LIMIT` (default 100) questions/day site-wide.
    Once spent, the route returns 503 and the terminal falls back to the keyword
    rules, so the site degrades instead of breaking.
 3. **Input caps** — 300 chars in, 200 tokens out.

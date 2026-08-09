@@ -32,8 +32,9 @@ const RATE_LIMIT = 6;
 const hits = new Map<string, number[]>();
 
 // Site-wide daily budget, counted in questions. Each question costs at most two
-// upstream calls (guard + answer), so 50 here is <=100 Cloudflare calls/day.
-const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT ?? 50);
+// upstream calls (guard + answer), so 100 here is <=200 Cloudflare calls/day —
+// roughly 8% of what the Workers AI free allowance covers for this model.
+const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT ?? 100);
 let budgetDay = '';
 let budgetUsed = 0;
 

@@ -1,0 +1,516 @@
+/* Claude Code, but it's a portfolio. Dark-only on purpose — terminals are dark. */
+
+:root {
+  --bg: #16150f;
+  --fg: #d6d3c7;
+  --dim: #7d7a6f;
+  --faint: #4e4c45;
+  --line: #2a2823;
+  --accent: #d97757; /* claude orange */
+  --accent-dim: #9c5940;
+  --green: #8aa872;
+  --blue: #7c9bb5;
+  --purple: #a690c4;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+}
+
+body {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  font-variant-ligatures: none;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: #fff;
+}
+
+/* ── shell ─────────────────────────────────────────────── */
+
+/* Hidden until JS confirms it can run — no-JS visitors get the <noscript> page. */
+.term {
+  display: none;
+}
+
+/* The page itself scrolls, so the prompt trails the output the way a real
+   terminal does — right under the last line, sticking to the bottom edge
+   only once there's enough scrollback to push it there. */
+html.js .term {
+  display: block;
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 0;
+}
+
+.term__scroll {
+  padding-bottom: 0.5rem;
+}
+
+/* ── output primitives ─────────────────────────────────── */
+
+.line {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.blank {
+  height: 0.85em;
+}
+
+.dim {
+  color: var(--dim);
+}
+.faint {
+  color: var(--faint);
+}
+.accent {
+  color: var(--accent);
+}
+.green {
+  color: var(--green);
+}
+.blue {
+  color: var(--blue);
+}
+.bold {
+  color: #f0eee4;
+  font-weight: 500;
+}
+
+.term a {
+  color: var(--blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(124, 155, 181, 0.35);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.term a:hover {
+  color: #a8c4da;
+  border-bottom-color: #a8c4da;
+}
+
+.term code {
+  font-family: inherit;
+  color: var(--accent);
+  background: rgba(217, 119, 87, 0.09);
+  padding: 0 0.28em;
+  border-radius: 3px;
+}
+
+/* boot line: `varun@macbook ~ % claude` */
+.boot {
+  color: var(--dim);
+}
+.boot .host {
+  color: var(--green);
+}
+.boot .path {
+  color: var(--blue);
+}
+.boot .cmd {
+  color: var(--fg);
+}
+
+/* welcome box */
+.box {
+  border: 1px solid var(--accent-dim);
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  margin: 0.35rem 0 1rem;
+  max-width: 46rem;
+}
+.box .title {
+  color: var(--fg);
+}
+.box .title .star {
+  color: var(--accent);
+}
+
+/* user prompt echo */
+.echo {
+  color: var(--fg);
+  margin-top: 0.35rem;
+}
+.echo .caret {
+  color: var(--dim);
+  margin-right: 0.55em;
+}
+
+/* assistant bullet */
+.msg {
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+  align-items: start;
+}
+.msg__dot {
+  color: var(--accent);
+}
+.msg__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg--cont .msg__dot {
+  visibility: hidden;
+}
+
+/* tool call */
+.tool {
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+  align-items: start;
+}
+.tool__dot {
+  color: var(--green);
+}
+.tool__name {
+  color: #f0eee4;
+  font-weight: 500;
+}
+.tool__arg {
+  color: var(--dim);
+}
+.tool__res {
+  color: var(--dim);
+  padding-left: 1.4em;
+}
+.tool__res .elbow {
+  color: var(--faint);
+}
+
+/* file contents dumped by `cat` */
+.pre {
+  padding-left: 1.4em;
+}
+
+/* two-column rows (work / now / contact) */
+.rows {
+  padding-left: 1.4em;
+}
+.row {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+}
+.row__tag {
+  color: var(--accent);
+}
+.row__text {
+  color: var(--fg);
+  word-break: break-word;
+}
+
+/* spinner */
+.spin {
+  color: var(--accent);
+}
+.spin__hint {
+  color: var(--faint);
+}
+
+/* ── composer ──────────────────────────────────────────── */
+
+.composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--bg);
+  padding: 0.35rem 0 0.75rem;
+}
+
+/* messages typed while a response is still streaming */
+.queued__item {
+  color: var(--faint);
+  padding: 0 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.queued__item .elbow {
+  color: var(--accent-dim);
+}
+
+.input {
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  transition: border-color 0.15s ease;
+  cursor: text;
+}
+.input:focus-within {
+  border-color: var(--accent-dim);
+}
+.input__caret {
+  color: var(--accent);
+}
+
+.input__field {
+  position: relative;
+}
+
+/* the real input sits invisibly on top of the mirrored text */
+.input__real {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font: inherit;
+  line-height: inherit;
+}
+
+.input__mirror {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 1.65em;
+  pointer-events: none;
+}
+.input__ph {
+  color: var(--faint);
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  background: var(--fg);
+  color: var(--bg);
+  animation: blink 1.1s steps(1) infinite;
+}
+.cursor--off {
+  animation: none;
+  background: var(--faint);
+}
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* slash-command menu */
+.menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.35rem);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem 0;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+.menu[hidden] {
+  display: none;
+}
+.menu__item {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.75rem;
+  padding: 0.12rem 0.75rem;
+  cursor: pointer;
+}
+.menu__item[aria-selected='true'] {
+  background: rgba(217, 119, 87, 0.12);
+}
+.menu__name {
+  color: var(--accent);
+}
+.menu__desc {
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* hint / status bar */
+.status {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--faint);
+  font-size: 0.8em;
+  padding: 0 0.75rem;
+}
+.status__right {
+  white-space: nowrap;
+}
+
+/* clickable suggestion chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.15rem 0 0.5rem 1.4em;
+}
+.chip {
+  font: inherit;
+  font-size: 0.85em;
+  color: var(--dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.chip:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+/* ── standalone post pages ─────────────────────────────── */
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 5rem;
+}
+.page .backlink {
+  color: var(--dim);
+  border: 0;
+}
+.page .backlink:hover {
+  color: var(--accent);
+}
+.page h1 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #f0eee4;
+  margin: 1.5rem 0 0.25rem;
+}
+.page h1::before {
+  content: '# ';
+  color: var(--accent);
+}
+.page .meta {
+  color: var(--faint);
+  font-size: 0.85em;
+  margin: 0 0 2rem;
+}
+.page h2 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #f0eee4;
+  margin: 2.25rem 0 0.5rem;
+}
+.page h2::before {
+  content: '## ';
+  color: var(--accent);
+}
+.page h3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f0eee4;
+  margin: 1.75rem 0 0.5rem;
+}
+.page p {
+  margin: 0 0 1rem;
+}
+.page ul,
+.page ol {
+  padding-left: 1.25rem;
+  margin: 0 0 1rem;
+}
+.page li {
+  margin: 0.15rem 0;
+}
+.page a {
+  color: var(--blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(124, 155, 181, 0.35);
+}
+.page a:hover {
+  color: #a8c4da;
+}
+.page code {
+  font-family: inherit;
+  color: var(--accent);
+  background: rgba(217, 119, 87, 0.09);
+  padding: 0 0.28em;
+  border-radius: 3px;
+}
+.page pre {
+  background: #100f0b;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+.page pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+.page blockquote {
+  margin: 0 0 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--line);
+  color: var(--dim);
+}
+.page hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2.5rem 0;
+}
+.page footer {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 0.85em;
+}
+
+/* ── responsive ────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  body {
+    font-size: 12.5px;
+  }
+  .term {
+    padding: 0 0.85rem;
+  }
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-bottom: 0.4rem;
+  }
+  .menu__item {
+    grid-template-columns: 7rem 1fr;
+  }
+  .status__right {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
+}

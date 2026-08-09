@@ -7,17 +7,22 @@ export async function getStaticPaths() {
   return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
 }
 
-interface Props { post: CollectionEntry<'posts'>; }
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
 const { post } = Astro.props;
 const { Content } = await post.render();
 const date = post.data.date.toISOString().slice(0, 10);
 ---
-<Base title={`${post.data.title} — Varun Lohade`} bodyClass="post">
-  <p class="back"><a href="/">← back</a></p>
-  <h1>{post.data.title}</h1>
-  <p class="post-meta">{date}</p>
-  <Content />
-  <footer>
-    <a href="/">home</a>
-  </footer>
+
+<Base title={`${post.data.title} — Varun Lohade`} description={post.data.description}>
+  <article class="page">
+    <a class="backlink" href="/">← back to shell</a>
+    <h1>{post.data.title}</h1>
+    <p class="meta">{date}</p>
+    <Content />
+    <footer>
+      <a class="backlink" href="/">~/varun</a>
+    </footer>
+  </article>
 </Base>

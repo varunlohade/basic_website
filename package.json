@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -11,7 +14,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^4.16.0",
-    "@astrojs/mdx": "^3.1.0"
+    "@astrojs/mdx": "^3.1.0",
+    "@astrojs/vercel": "^7.8.2",
+    "astro": "^4.16.0"
   }
 }

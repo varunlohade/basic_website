@@ -14,6 +14,7 @@ type Block =
   | { k: 'gap' }
   | { k: 'think'; ms?: number }
   | { k: 'clear' }
+  | { k: 'ask'; q: string }
   | { k: 'nav'; url: string };
 
 interface Post {
@@ -173,6 +174,123 @@ async function think(ms: number) {
   el.remove();
 }
 
+/** Turns bare URLs and emails in generated text into links, without innerHTML. */
+function autolink(host: HTMLElement) {
+  const source = host.textContent ?? '';
+  const re = /(https?:\/\/[^\s)<>]+)|([\w.+-]+@[\w-]+\.[\w.-]+)/g;
+  if (!re.test(source)) return;
+  re.lastIndex = 0;
+
+  host.textContent = '';
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source))) {
+    if (m.index > last) host.appendChild(document.createTextNode(source.slice(last, m.index)));
+    const a = document.createElement('a');
+    a.textContent = m[0];
+    if (m[1]) {
+      a.href = m[0];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    } else {
+      a.href = `mailto:${m[0]}`;
+    }
+    host.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  if (last < source.length) host.appendChild(document.createTextNode(source.slice(last)));
+}
+
+/**
+ * Streams a real answer from /api/ask, token by token.
+ * Returns false if the endpoint is unavailable, so the caller can fall back to
+ * the built-in answers — the terminal still works with no model behind it.
+ */
+async function streamAnswer(q: string): Promise<boolean> {
+  const words = ['Simmering', 'Percolating', 'Noodling', 'Puzzling', 'Ruminating', 'Cogitating'];
+  const glyphs = ['✻', '✽', '✳', '∗', '✳', '✽'];
+  const word = words[Math.floor(Math.random() * words.length)];
+
+  const spinner = append(div('line spin'));
+  const t0 = Date.now();
+  let g = 0;
+  const tick = window.setInterval(() => {
+    const secs = ((Date.now() - t0) / 1000).toFixed(0);
+    spinner.innerHTML = `${glyphs[g++ % glyphs.length]} ${word}… <span class="spin__hint">(${secs}s · esc to interrupt)</span>`;
+    toBottom();
+  }, 110);
+
+  const ctrl = new AbortController();
+  const watch = window.setInterval(() => {
+    if (interrupted) ctrl.abort();
+  }, 80);
+
+  const cleanup = () => {
+    window.clearInterval(tick);
+    window.clearInterval(watch);
+  };
+
+  let body: HTMLElement | null = null;
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ q }),
+      signal: ctrl.signal,
+    });
+
+    if (!res.ok || !res.body) {
+      cleanup();
+      spinner.remove();
+      return false;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      if (!chunk) continue;
+
+      // First token: drop the spinner and open the assistant message.
+      if (!body) {
+        spinner.remove();
+        window.clearInterval(tick);
+        const wrap = append(div('msg'));
+        wrap.appendChild(div('msg__dot', '⏺'));
+        body = div('msg__body');
+        wrap.appendChild(body);
+      }
+
+      body.appendChild(document.createTextNode(chunk));
+      toBottom();
+
+      if (interrupted) {
+        await reader.cancel();
+        break;
+      }
+    }
+
+    cleanup();
+    if (!body) {
+      spinner.remove();
+      return false; // 200 with an empty body — treat as a miss
+    }
+    autolink(body);
+    toBottom();
+    return true;
+  } catch {
+    cleanup();
+    spinner.remove();
+    // An abort is an interrupt, not a failure — don't show the fallback for it.
+    return interrupted;
+  }
+}
+
 async function render(blocks: Block[]) {
   for (const b of blocks) {
     if (interrupted && b.k !== 'clear') break;
@@ -243,6 +361,12 @@ async function render(blocks: Block[]) {
           wrap.appendChild(btn);
         }
         toBottom();
+        break;
+      }
+
+      case 'ask': {
+        const answered = await streamAnswer(b.q);
+        if (!answered && !interrupted) await render(offline(b.q));
         break;
       }
 
@@ -534,10 +658,22 @@ function lookup(name: string) {
    free-form answers
    ──────────────────────────────────────────────────────── */
 
-function answer(input: string): Block[] {
+/** Whole-word match, so `ai` doesn't fire on "em-ai-l" or "av-ai-lable". */
+function mentions(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(haystack);
+}
+
+/**
+ * Fallback for when /api/ask is unreachable or unconfigured: the keyword rules
+ * from site.ts, then a generic nudge. The model is the primary path — these
+ * exist so the terminal still answers with no backend at all.
+ */
+function offline(input: string): Block[] {
   const q = input.toLowerCase();
+
   for (const rule of rules) {
-    if (rule.any.some((k) => q.includes(k))) {
+    if (rule.any.some((k) => mentions(q, k))) {
       return [
         ...(rule.tool ? ([{ k: 'tool', ...rule.tool }, { k: 'gap' }] as Block[]) : []),
         { k: 'msg', text: rule.reply[0] },
@@ -545,11 +681,15 @@ function answer(input: string): Block[] {
       ];
     }
   }
+
   return [
     { k: 'msg', text: 'I only know one subject, and it’s Varun. Try one of these:' },
     { k: 'chips', items: ['about', 'work', 'writing', 'now', 'contact'] },
   ];
 }
+
+/** Free-form input goes to the model. Commands stay local and instant. */
+const answer = (input: string): Block[] => [{ k: 'ask', q: input }];
 
 /* ────────────────────────────────────────────────────────
    run loop
@@ -584,7 +724,7 @@ async function exec(raw: string) {
   const blocks: Block[] =
     cmd && (isSlash || rest.length === 0 || cmd.args)
       ? cmd.run(arg)
-      : [{ k: 'think' }, ...answer(input)];
+      : answer(input); // answer() owns its own spinner — the remote path streams one
 
   await render(blocks);
 

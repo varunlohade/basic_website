@@ -39,11 +39,6 @@ OpenRouter, or a local Ollama is two env vars — see `.env.example`.
 
 The endpoint is public and holds an API key, so it's layered:
 
-0. **Client throttle** — before a request is even made: questions under 4
-   characters are rejected outright, 5 questions/min triggers a 45s cooldown,
-   and at most 3 can be queued while one is running. Commands are exempt —
-   they cost nothing, and throttling `ls` would just feel broken. This is UX,
-   not security; a reload clears it, which is what the server layers are for.
 1. **Rate limit** — 6 requests/min per IP, applied before parsing.
 2. **Daily budget** — `AI_DAILY_LIMIT` (default 100) questions/day site-wide.
    Once spent, the route returns 503 and the terminal falls back to the keyword
@@ -57,13 +52,7 @@ The endpoint is public and holds an API key, so it's layered:
    model. The message is passed as tagged, explicitly-untrusted data.
 6. **Answering system prompt** — constrained to the facts in `site.ts`, told to
    say "I don't know" rather than guess.
-7. **Output validation** — the layer that actually holds. A real answer about a
-   person never contains a code block, so the completed response is checked for
-   shape (no fences, no `def`/`function`/`SELECT`, under 700 chars) before it
-   leaves the server. A jailbreak that survives every input layer still yields
-   a refusal instead of code. This is why the answering call isn't streamed:
-   the whole response has to exist before it can be judged.
-8. **Rendering** — model output is inserted as text nodes, never HTML.
+7. **Rendering** — model output is inserted as text nodes, never HTML.
 
 The guard **fails open** on an infrastructure error: an unreachable classifier
 isn't evidence of an attack, and layer 6 still applies. An explicit `BLOCK`

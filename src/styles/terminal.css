@@ -243,6 +243,25 @@ html.js .term {
   color: var(--accent-dim);
 }
 
+/* Queue is full — flash rather than silently swallowing the keystroke. */
+.queued--full {
+  animation: queue-full 0.5s ease;
+}
+@keyframes queue-full {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .queued--full {
+    animation: none;
+  }
+}
+
 .input {
   display: grid;
   grid-template-columns: 1.4em 1fr;

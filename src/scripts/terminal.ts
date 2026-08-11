@@ -681,8 +681,65 @@ function offline(input: string): Block[] {
   ];
 }
 
-/** Free-form input goes to the model. Commands stay local and instant. */
-const answer = (input: string): Block[] => [{ k: 'ask', q: input }];
+/* ────────────────────────────────────────────────────────
+   throttle — client side, for questions that cost a model call
+   ──────────────────────────────────────────────────────── */
+
+const ASK_MIN_CHARS = 4; // "hi", "a", "?" are not questions
+const ASK_BURST = 5; // questions allowed per window
+const ASK_WINDOW_MS = 60_000;
+const ASK_COOLDOWN_MS = 45_000; // lockout once the burst is spent
+
+let askTimes: number[] = [];
+let cooldownUntil = 0;
+
+// Deliberately no minimum gap between questions. It looked like a good idea,
+// but questions typed while a response is running are queued and then drained
+// back to back — a gap rule rejects those, punishing the user for a feature.
+// The burst window bounds spam on its own.
+
+const secs = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
+
+/**
+ * Free-form input goes to the model; commands stay local and instant.
+ *
+ * Commands are deliberately exempt from all of this — they cost nothing, and
+ * throttling `ls` would just make the terminal feel broken. This is a UX guard
+ * that stops honest spamming before it becomes a request; the real ceiling is
+ * the per-IP limit and daily budget in /api/ask, which a page reload can't
+ * clear the way it clears these counters.
+ */
+function answer(input: string): Block[] {
+  const now = Date.now();
+
+  if (now < cooldownUntil) {
+    return [
+      {
+        k: 'msg',
+        text: `Still cooling down — ${secs(cooldownUntil - now)}s left. Commands like \`about\` and \`work\` still work.`,
+      },
+    ];
+  }
+
+  if (input.length < ASK_MIN_CHARS) {
+    return [{ k: 'msg', text: 'That’s too short to be a question. Try `/help` for commands.' }];
+  }
+
+  askTimes = askTimes.filter((t) => now - t < ASK_WINDOW_MS);
+  if (askTimes.length >= ASK_BURST) {
+    cooldownUntil = now + ASK_COOLDOWN_MS;
+    askTimes = [];
+    return [
+      {
+        k: 'msg',
+        text: `That’s ${ASK_BURST} questions in a minute. Pausing for ${secs(ASK_COOLDOWN_MS)}s — commands still work.`,
+      },
+    ];
+  }
+
+  askTimes.push(now);
+  return [{ k: 'ask', q: input }];
+}
 
 /* ────────────────────────────────────────────────────────
    run loop
@@ -732,7 +789,8 @@ async function exec(raw: string) {
   field.focus();
 }
 
-/** Messages typed while a response is streaming queue up, as they do in Claude Code. */
+/** Messages typed while a response is running queue up, as they do in Claude Code. */
+const QUEUE_MAX = 3; // holding Enter shouldn't buy unlimited pending work
 const queue: string[] = [];
 const queueEl = root.querySelector<HTMLElement>('.queued')!;
 
@@ -751,6 +809,12 @@ function submit() {
   paint();
 
   if (busy) {
+    if (queue.length >= QUEUE_MAX) {
+      queueEl.classList.remove('queued--full');
+      void queueEl.offsetWidth; // restart the flash if it's already running
+      queueEl.classList.add('queued--full');
+      return;
+    }
     queue.push(v);
     drawQueue();
     return;

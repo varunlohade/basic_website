@@ -2,9 +2,26 @@
 title: "Hello"
 date: 2026-05-14
 description: "first post — what this space is for."
+category: work
 ---
 
-This is where I'll write things I want to keep — notes on agents, finance, and robotics. Markdown lives in `src/content/posts/`, just drop in a new `.mdx` file.
+This is where I'll write things I want to keep — notes on agents, finance, and robotics, and whatever else is on my mind.
+
+## How this works
+
+Posts live in `src/content/posts/` as `.mdx` files. Each one needs a bit of frontmatter:
+
+```yaml
+---
+title: "Post title"
+date: 2026-08-12
+description: "one line, shown in the list"
+category: work   # or: life
+draft: false     # true hides it everywhere
+---
+```
+
+`category` splits the blog into two sections — **work** for engineering and building, **life** for everything else. That's the only knob; a new file with the right frontmatter shows up on `/blog` and on the home page automatically.
 
 ## Why MDX
 

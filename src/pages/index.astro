@@ -1,93 +1,83 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
-import { identity, work, now, contact, about } from '../data/site';
 
-const entries = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const posts = entries.map((p) => ({
-  slug: p.slug,
-  title: p.data.title,
-  date: p.data.date.toISOString().slice(0, 10),
-  description: p.data.description ?? '',
-  body: p.body,
-}));
-
-// Strips the inline markup so the no-JS fallback stays readable.
-const plain = (s: string) =>
-  s
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1');
+const recent = posts.slice(0, 4);
+const fmtYear = (d: Date) => d.getFullYear().toString();
 ---
-
 <Base>
-  <main class="term">
-    <div class="term__scroll">
-      <div class="term__out"></div>
-    </div>
+  <h1>Varun Lohade</h1>
+  <p class="sub">Engineer &middot; Mobile, AI, Crypto, Robotics</p>
 
-    <div class="composer">
-      <div class="menu" hidden role="listbox" aria-label="Commands"></div>
-      <div class="queued" aria-live="polite"></div>
+  <p>
+    I build things. Mostly software, sometimes hardware.
+    Currently thinking about agents, on-chain finance, and machines that move.
+  </p>
 
-      <div class="input">
-        <span class="input__caret">&gt;</span>
-        <div class="input__field">
-          <div class="input__mirror" aria-hidden="true"></div>
-          <input
-            class="input__real"
-            type="text"
-            autocomplete="off"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-            aria-label="Ask about Varun"
-          />
-        </div>
-      </div>
+  <h2>Work</h2>
+  <ul>
+    <li>
+      <span class="tag">mobile</span>
+      <span class="row-text">Flutter <span class="desc">— where most of what I build ends up shipping.</span></span>
+    </li>
+    <li>
+      <span class="tag">crypto</span>
+      <span class="row-text"><a href="https://avici.money">Avici.money</a> <span class="desc">— cofounder, technical founder. On-chain finance.</span></span>
+    </li>
+    <li>
+      <span class="tag">ai</span>
+      <span class="row-text"><a href="https://github.com/varunlohade/fixmahbug">fixmahbug</a> <span class="desc">— anyone on the team can fix small bugs without pulling an engineer; prompts route into the engineer's project-aware Claude.</span></span>
+    </li>
+    <li>
+      <span class="tag">robotics</span>
+      <span class="row-text">robotic arm <span class="desc">— LLM-driven. Ongoing.</span></span>
+    </li>
+  </ul>
 
-      <div class="status">
-        <span>? for shortcuts</span>
-        <span class="status__right">varun-1.0 · {identity.cwd}</span>
-      </div>
-    </div>
-  </main>
+  <h2>Writing</h2>
+  <ul>
+    {recent.map((p) => (
+      <li>
+        <span class="tag">{fmtYear(p.data.date)}</span>
+        <span class="row-text"><a href={`/blog/${p.slug}/`}>{p.data.title}</a>{p.data.description && <span class="desc"> — {p.data.description}</span>}</span>
+      </li>
+    ))}
+    <li>
+      <span class="tag">blog</span>
+      <span class="row-text"><a href="/blog/">all posts</a> <span class="desc">— work, and everything else.</span></span>
+    </li>
+    <li>
+      <span class="tag">medium</span>
+      <span class="row-text"><a href="https://medium.com/@varunlohade">@varunlohade</a> <span class="desc">— older essays.</span></span>
+    </li>
+  </ul>
 
-  <script type="application/json" id="site-posts" set:html={JSON.stringify(posts)} />
+  <h2>Now</h2>
+  <ul>
+    <li>
+      <span class="tag">thinking</span>
+      <span class="row-text">parallel agents interacting with each other to process interactions faster.</span>
+    </li>
+    <li>
+      <span class="tag">learning</span>
+      <span class="row-text"><em>Modern Robotics</em> — Kevin Lynch, Northwestern.</span>
+    </li>
+    <li>
+      <span class="tag">building</span>
+      <span class="row-text">Avici.money, fixmahbug, the arm.</span>
+    </li>
+  </ul>
 
-  <noscript>
-    <div class="page">
-      <h1>{identity.name}</h1>
-      <p class="meta">{identity.tagline}</p>
-      {about.map((p) => <p>{plain(p)}</p>)}
+  <h2>Elsewhere</h2>
+  <ul class="contact-row">
+    <li><a href="mailto:varunlohade@gmail.com">email</a></li>
+    <li><a href="https://github.com/varunlohade">github</a></li>
+  </ul>
 
-      <h2>Work</h2>
-      <ul>{work.map((r) => <li>{r.tag} — {plain(r.text)}</li>)}</ul>
-
-      <h2>Writing</h2>
-      <ul>
-        {posts.map((p) => (
-          <li>
-            <a href={`/writing/${p.slug}/`}>{p.title}</a> — {p.date}
-          </li>
-        ))}
-        <li><a href="https://medium.com/@varunlohade">Medium</a> — older essays.</li>
-      </ul>
-
-      <h2>Now</h2>
-      <ul>{now.map((r) => <li>{r.tag} — {plain(r.text)}</li>)}</ul>
-
-      <h2>Elsewhere</h2>
-      <ul>{contact.map((r) => <li>{r.tag} — {plain(r.text)}</li>)}</ul>
-
-      <footer>last updated {identity.updated}</footer>
-    </div>
-  </noscript>
-
-  <script>
-    import '../scripts/terminal.ts';
-  </script>
+  <footer>
+    last updated 2026-08-12
+  </footer>
 </Base>

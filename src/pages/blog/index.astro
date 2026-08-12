@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const groups = [
+  { key: 'work', title: 'Work' },
+  { key: 'life', title: 'Life' },
+] as const;
+
+const fmtYear = (d: Date) => d.getFullYear().toString();
+---
+
+<Base title="Blog — Varun Lohade" description="Writing by Varun Lohade — on building things, and on everything else.">
+  <p class="back"><a href="/">← back</a></p>
+
+  <h1>Blog</h1>
+  <p class="sub">What I'm building, and everything else.</p>
+
+  {groups.map((g) => {
+    const items = posts.filter((p) => p.data.category === g.key);
+    if (items.length === 0) return null;
+    return (
+      <>
+        <h2>{g.title}</h2>
+        <ul>
+          {items.map((p) => (
+            <li>
+              <span class="tag">{fmtYear(p.data.date)}</span>
+              <span class="row-text">
+                <a href={`/blog/${p.slug}/`}>{p.data.title}</a>
+                {p.data.description && <span class="desc"> — {p.data.description}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  })}
+
+  {posts.length === 0 && <p class="desc">Nothing published yet.</p>}
+
+  <footer>
+    <a href="/">home</a>
+  </footer>
+</Base>

@@ -15,14 +15,19 @@ const { Content } = await post.render();
 const date = post.data.date.toISOString().slice(0, 10);
 ---
 
-<Base title={`${post.data.title} — Varun Lohade`} description={post.data.description}>
-  <article class="page">
-    <a class="backlink" href="/">← back to shell</a>
-    <h1>{post.data.title}</h1>
-    <p class="meta">{date}</p>
-    <Content />
-    <footer>
-      <a class="backlink" href="/">~/varun</a>
-    </footer>
-  </article>
+<Base
+  title={`${post.data.title} — Varun Lohade`}
+  description={post.data.description}
+  bodyClass="post"
+>
+  <p class="back"><a href="/blog/">← blog</a></p>
+
+  <h1>{post.data.title}</h1>
+  <p class="post-meta">{date} · {post.data.category}</p>
+
+  <Content />
+
+  <footer>
+    <a href="/blog/">all posts</a> &nbsp;·&nbsp; <a href="/">home</a>
+  </footer>
 </Base>

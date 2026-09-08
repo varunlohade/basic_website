@@ -6,28 +6,25 @@ interface Props {
 }
 const {
   title = 'Varun Lohade',
-  description = 'Varun Lohade — software engineer. Mobile apps, AI tools, and things that move.',
+  description = 'Varun Lohade — engineer. Mobile, AI, crypto, robotics.',
   bodyClass,
 } = Astro.props;
 import '../styles/global.css';
 ---
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
-    />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-  </head>
-  <body class={bodyClass}>
-    <slot />
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body class={bodyClass}>
+  <slot />
+</body>
 </html>

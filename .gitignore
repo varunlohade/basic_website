@@ -5,9 +5,3 @@ dist/
 .env.production
 .DS_Store
 .vercel/
-
-.env.*
-!.env.example
-*.pem
-*.key
-coverage/

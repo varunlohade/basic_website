@@ -2,6 +2,12 @@ import { TextureLoader, SRGBColorSpace } from 'three';
 import { createWorkshop, ASSETS } from './workshop-scene.mjs';
 import { CanvasRenderer } from './canvas-renderer.mjs';
 const host = document.querySelector('.landscape');
+const loadingIndicator = document.querySelector('.scene-loader');
+const loadingTimeout = setTimeout(finishLoading, 10000);
+function finishLoading() {
+  clearTimeout(loadingTimeout);
+  loadingIndicator?.remove();
+}
 const preference = matchMedia('(prefers-reduced-motion: reduce)');
 let paused = preference.matches,
   visible = true,
@@ -13,6 +19,7 @@ let paused = preference.matches,
   resizeObserver,
   failed = false;
 function fail(error) {
+  finishLoading();
   console.error('Landscape animation failed', error);
   failed = true;
   resizeObserver?.disconnect();
@@ -97,6 +104,7 @@ async function start() {
     resize();
     host.append(renderer.domElement);
     host.classList.add('has-animation');
+    finishLoading();
     resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(host);
     resume();

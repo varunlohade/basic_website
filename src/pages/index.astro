@@ -1,50 +1,127 @@
 ---
 import Base from '../layouts/Base.astro';
+import '../styles/home.css';
 ---
-<Base>
-  <h1>Varun Lohade</h1>
-  <p class="sub">Engineer &middot; Mobile, AI, Crypto, Robotics</p>
 
-  <p>
-    I build things. Mostly software, sometimes hardware.
-    Currently thinking about agents, on-chain finance, and machines that move.
-  </p>
-
-  <h2>Work</h2>
-  <ul>
-    <li>
-      <span class="tag">crypto</span>
-      <span class="row-text"><a href="https://avici.money">Avici.money</a> <span class="desc">— former cofounder. On-chain finance.</span></span>
-    </li>
-    <li>
-      <span class="tag">ai</span>
-      <span class="row-text"><a href="https://github.com/varunlohade/fixmahbug">fixmahbug</a> <span class="desc">— anyone on the team can fix small bugs without pulling an engineer; prompts route into the engineer's project-aware Claude.</span></span>
-    </li>
-    <li>
-      <span class="tag">robotics</span>
-      <span class="row-text">robotic arm <span class="desc">— LLM-driven. Ongoing.</span></span>
-    </li>
-  </ul>
-
-  <h2>Now</h2>
-  <ul>
-    <li>
-      <span class="tag">learning</span>
-      <span class="row-text"><em>Modern Robotics</em> — Kevin Lynch, Northwestern.</span>
-    </li>
-    <li>
-      <span class="tag">building</span>
-      <span class="row-text">Avici.money, fixmahbug, the arm.</span>
-    </li>
-  </ul>
-
-  <h2>Elsewhere</h2>
-  <ul class="contact-row">
-    <li><a href="mailto:varunlohade@gmail.com">email</a></li>
-    <li><a href="https://github.com/varunlohade">github</a></li>
-  </ul>
-
-  <footer>
-    last updated 2026-08-12
-  </footer>
+<Base bodyClass="portfolio">
+  <a class="skip-link" href="#work">Skip to work</a>
+  <header class="site-header">
+    <a class="wordmark" href="/" aria-label="Varun Lohade, home"
+      >varun<span>lohade</span><b>.</b></a
+    >
+    <nav aria-label="Main navigation">
+      <a
+        href="mailto:varunlohade@gmail.com"
+        class="nav-contact">Say hello <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="landscape">
+        <img
+          id="scene-poster"
+          src="/art/backdrop.png"
+          alt=""
+          fetchpriority="high"
+          width="960"
+          height="540"
+        />
+      </div>
+      <div class="scene-loader" role="status">
+        <span class="scene-loader-dot" aria-hidden="true"></span>Loading scene…
+      </div>
+      <noscript><style>.scene-loader { display: none; }</style></noscript>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Software Engineer</p>
+        <h1 id="hero-heading">
+          I couldn’t think of anything to add here.
+        </h1>
+        <p class="hero-description">
+          Mostly software. Sometimes hardware.<br />Most times dad jokes.
+        </p>
+        <a class="hero-cta" href="#work"
+          >Explore my work <span aria-hidden="true">↓</span></a
+        >
+      </div>
+    </section>
+    <div class="page-content">
+      <section id="work" class="work-section" aria-labelledby="work-heading">
+        <div class="section-intro">
+          <p class="eyebrow">01 / WORK</p><h2 id="work-heading">
+            A few things<br />I’ve worked on.
+          </h2><p>
+            Mobile apps, AI tools, crypto, and a robotic arm. I like figuring
+            out how the pieces fit together.
+          </p>
+        </div>
+        <div class="work-list">
+          <a class="work-item" href="https://avici.money"
+            ><span class="work-number">01</span><div>
+              <span class="project-type">CRYPTO · FINTECH</span><h3>
+                Avici<span aria-hidden="true">↗</span>
+              </h3><p>
+                Former cofounder & founding engineer.<br />Built products for
+                on-chain finance.
+              </p>
+            </div></a
+          >
+          <a class="work-item" href="https://github.com/varunlohade/fixmahbug"
+            ><span class="work-number">02</span><div>
+              <span class="project-type">AI · DEVELOPER TOOLS</span><h3>
+                fixmahbug<span aria-hidden="true">↗</span>
+              </h3><p>
+                A tool that lets teammates request small bug fixes, with Claude
+                working in the project’s codebase.
+              </p>
+            </div></a
+          >
+          <div class="work-item">
+            <span class="work-number">03</span><div>
+              <span class="project-type">ROBOTICS · EXPERIMENT</span><h3>
+                The robotic arm
+              </h3><p>
+                Teaching a machine to move with language.<br />An ongoing
+                experiment.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="now-section" aria-labelledby="now-heading">
+        <div>
+          <p class="eyebrow">02 / NOW</p><h2 id="now-heading">
+            What I’m<br />exploring.
+          </h2>
+        </div><dl>
+          <div>
+            <dt>Learning</dt><dd>
+              <em>Modern Robotics</em> by Kevin Lynch, Northwestern.
+            </dd>
+          </div><div>
+            <dt>Exploring</dt><dd>
+              Agents, on-chain finance, and machines that move.
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <footer class="portfolio-footer">
+        <div>
+          <p>Have an idea you want to build?</p><a
+            class="footer-hello"
+            href="mailto:varunlohade@gmail.com"
+            >Let’s talk.<span aria-hidden="true">↗</span></a>
+        </div><div class="footer-bottom">
+          <span>Varun Lohade</span><div>
+            <a href="https://github.com/varunlohade">GitHub ↗</a><a
+              href="https://medium.com/@varunlohade">Medium ↗</a
+            ><a href="mailto:varunlohade@gmail.com">Email ↗</a>
+          </div><a href="#hero-heading">Back to top ↑</a>
+        </div>
+      </footer>
+    </div>
+  </main>
 </Base>
+<script>
+  import '../scripts/landscape.mjs';
+</script>

@@ -39,9 +39,10 @@ Each animated canvas owns an independent texture source; see the regression test
 ## Security and hosting
 
 See `SECURITY_REVIEW.md` for the review scope, evidence and remaining limits.
-A meta CSP restricts scripts to the same origin. `public/_headers` adds response
-headers on hosts supporting that file (such as Cloudflare Pages and Netlify).
-On other hosts, configure equivalent headers and verify the actual responses.
+A meta CSP restricts scripts to the same origin. `vercel.json` adds the response
+headers (nosniff, frame denial, referrer and permissions policies, and a CSP with
+`frame-ancestors 'none'`) on Vercel. On another host, configure equivalent
+headers and verify the actual responses.
 Inline styles are allowed for trusted MDX syntax highlighting; inline scripts,
 remote scripts, plugins, forms and external connections are not allowed.
 

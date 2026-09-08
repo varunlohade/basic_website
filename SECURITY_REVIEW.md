@@ -39,9 +39,11 @@ not a penetration test or a guarantee of no vulnerabilities.
 - The CSP permits inline CSS for code highlighting. It does not permit inline
   JavaScript or remote scripts. Framing protection requires response headers;
   the meta CSP alone cannot supply it.
-- `_headers` enforcement, TLS, custom-domain configuration, GitHub permissions
-  and account security depend on the chosen host. Actual custom-domain headers
-  were not verified because the GitHub push is blocked.
+- Response headers are configured in `vercel.json` (2026-09-09). The earlier
+  `public/_headers` file was a Netlify/Cloudflare Pages convention that Vercel
+  ignored, so the live site served no header-level CSP or framing protection
+  until this change. TLS, custom-domain configuration, GitHub permissions and
+  account security depend on the host. Verify live headers after each deploy.
 - Browser QA used the supported internal preview, not the production domain.
   Mobile-device performance and every browser/GPU combination were not tested.
 - Dependency audits are point-in-time advisory checks. Rerun them before release.

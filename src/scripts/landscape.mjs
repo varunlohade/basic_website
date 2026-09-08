@@ -1,14 +1,35 @@
-import { TextureLoader, SRGBColorSpace } from 'three';
+import { Texture, SRGBColorSpace } from 'three';
 import { createWorkshop, ASSETS } from './workshop-scene.mjs';
 import { CanvasRenderer } from './canvas-renderer.mjs';
+import {
+  createSceneLoader,
+  fetchWithProgress,
+  decodeImage,
+} from './scene-loader.mjs';
 const host = document.querySelector('.landscape');
-const loadingIndicator = document.querySelector('.scene-loader');
-const loadingTimeout = setTimeout(finishLoading, 10000);
-function finishLoading() {
-  clearTimeout(loadingTimeout);
-  loadingIndicator?.remove();
+const poster = document.querySelector('#scene-poster');
+function showFullPoster() {
+  if (!poster?.dataset.fullSrc) return;
+  poster.src = poster.dataset.fullSrc;
+  poster.classList.remove('is-placeholder');
 }
 const preference = matchMedia('(prefers-reduced-motion: reduce)');
+const loadingIndicator = createSceneLoader(
+  document.querySelector('.scene-loader'),
+  { reduceMotion: preference.matches },
+);
+// Safety net: if no bytes arrive for a while, hide the panel but keep loading.
+const STALL_MS = 15000;
+let loadingTimeout = setTimeout(() => loadingIndicator.hide(), STALL_MS);
+function reportProgress(fraction) {
+  clearTimeout(loadingTimeout);
+  loadingTimeout = setTimeout(() => loadingIndicator.hide(), STALL_MS);
+  loadingIndicator.progress(fraction);
+}
+function finishLoading() {
+  clearTimeout(loadingTimeout);
+  loadingIndicator.done();
+}
 let paused = preference.matches,
   visible = true,
   frame = 0,
@@ -19,7 +40,9 @@ let paused = preference.matches,
   resizeObserver,
   failed = false;
 function fail(error) {
-  finishLoading();
+  clearTimeout(loadingTimeout);
+  loadingIndicator.hide();
+  showFullPoster();
   console.error('Landscape animation failed', error);
   failed = true;
   resizeObserver?.disconnect();
@@ -78,16 +101,22 @@ function prepare(image, key) {
 }
 async function start() {
   try {
-    const loader = new TextureLoader(),
-      textures = Object.fromEntries(
+    const blobs = await fetchWithProgress(
+        Object.values(ASSETS),
+        reportProgress,
+      ),
+      images = new Map(
         await Promise.all(
-          Object.entries(ASSETS).map(async ([key, url]) => {
-            const t = await loader.loadAsync(url);
-            t.image = prepare(t.image, key);
-            t.colorSpace = SRGBColorSpace;
-            return [key, t];
-          }),
+          [...blobs].map(async ([url, blob]) => [url, await decodeImage(blob)]),
         ),
+      ),
+      textures = Object.fromEntries(
+        Object.entries(ASSETS).map(([key, url]) => {
+          const t = new Texture(prepare(images.get(url), key));
+          t.colorSpace = SRGBColorSpace;
+          t.needsUpdate = true;
+          return [key, t];
+        }),
       );
     workshop = createWorkshop(textures);
     renderer = new CanvasRenderer();
@@ -103,6 +132,8 @@ async function start() {
     };
     resize();
     host.append(renderer.domElement);
+    // Force a style pass so the canvas fades in instead of popping.
+    renderer.domElement.getBoundingClientRect();
     host.classList.add('has-animation');
     finishLoading();
     resizeObserver = new ResizeObserver(resize);

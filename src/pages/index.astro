@@ -10,9 +10,9 @@ import '../styles/home.css';
       >varun<span>lohade</span><b>.</b></a
     >
     <nav aria-label="Main navigation">
-      <a
-        href="mailto:varunlohade@gmail.com"
-        class="nav-contact">Say hello <span aria-hidden="true">↗</span></a>
+      <a href="mailto:varunlohade@gmail.com" class="nav-contact"
+        >Say hello <span aria-hidden="true">↗</span></a
+      >
     </nav>
   </header>
   <main>
@@ -20,23 +20,53 @@ import '../styles/home.css';
       <div class="landscape">
         <img
           id="scene-poster"
-          src="/art/backdrop.png"
+          class="is-placeholder"
+          src="data:image/jpeg;base64,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"
+          data-full-src="/art/backdrop.png"
           alt=""
-          fetchpriority="high"
           width="960"
           height="540"
         />
+        <noscript
+          ><img
+            src="/art/backdrop.png"
+            alt=""
+            width="960"
+            height="540"
+          /></noscript
+        >
       </div>
-      <div class="scene-loader" role="status">
-        <span class="scene-loader-dot" aria-hidden="true"></span>Loading scene…
+      <div class="scene-loader">
+        <p class="visually-hidden" role="status">Loading scene</p>
+        <div class="scene-loader-row" aria-hidden="true">
+          <span class="scene-loader-label" data-loader-label
+            >Loading algorithm to break the space-time continuum…</span
+          >
+          <span class="scene-loader-pct" data-loader-pct>0%</span>
+        </div>
+        <div
+          class="scene-loader-track"
+          role="progressbar"
+          aria-label="Scene assets"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          data-loader-track
+        >
+          <span class="scene-loader-fill" data-loader-fill></span>
+        </div>
       </div>
-      <noscript><style>.scene-loader { display: none; }</style></noscript>
+      <noscript
+        ><style>
+          .scene-loader {
+            display: none;
+          }
+        </style></noscript
+      >
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-copy">
         <p class="eyebrow">Software Engineer</p>
-        <h1 id="hero-heading">
-          Building experiences people love.
-        </h1>
+        <h1 id="hero-heading">Building experiences people love.</h1>
         <p class="hero-description">
           Mostly software. Sometimes hardware.<br />Most times dad jokes.
         </p>
@@ -61,10 +91,10 @@ import '../styles/home.css';
               <span class="project-type">CRYPTO · FINTECH</span><h3>
                 Avici<span aria-hidden="true">↗</span>
               </h3><p>
-                Former cofounder & founding engineer. Built the entire app
-                solo, from scratch — Flutter and backend.<br />Shipped AI
-                agents in Slack for support, design accountability, smarter
-                research, and bug fixes.
+                Former cofounder & founding engineer. Built the entire app solo,
+                from scratch — Flutter and backend.<br />Shipped AI agents in
+                Slack for support, design accountability, smarter research, and
+                bug fixes.
               </p>
             </div></a
           >
@@ -112,7 +142,8 @@ import '../styles/home.css';
           <p>Have an idea you want to build?</p><a
             class="footer-hello"
             href="mailto:varunlohade@gmail.com"
-            >Let’s talk.<span aria-hidden="true">↗</span></a>
+            >Let’s talk.<span aria-hidden="true">↗</span></a
+          >
         </div><div class="footer-bottom">
           <span>Varun Lohade</span><div>
             <a href="https://github.com/varunlohade">GitHub ↗</a><a

@@ -1,12 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
-
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-
-const recent = posts.slice(0, 4);
-const fmtYear = (d: Date) => d.getFullYear().toString();
 ---
 <Base>
   <h1>Varun Lohade</h1>
@@ -20,12 +13,8 @@ const fmtYear = (d: Date) => d.getFullYear().toString();
   <h2>Work</h2>
   <ul>
     <li>
-      <span class="tag">mobile</span>
-      <span class="row-text">Flutter <span class="desc">— where most of what I build ends up shipping.</span></span>
-    </li>
-    <li>
       <span class="tag">crypto</span>
-      <span class="row-text"><a href="https://avici.money">Avici.money</a> <span class="desc">— cofounder, technical founder. On-chain finance.</span></span>
+      <span class="row-text"><a href="https://avici.money">Avici.money</a> <span class="desc">— former cofounder. On-chain finance.</span></span>
     </li>
     <li>
       <span class="tag">ai</span>
@@ -37,30 +26,8 @@ const fmtYear = (d: Date) => d.getFullYear().toString();
     </li>
   </ul>
 
-  <h2>Writing</h2>
-  <ul>
-    {recent.map((p) => (
-      <li>
-        <span class="tag">{fmtYear(p.data.date)}</span>
-        <span class="row-text"><a href={`/blog/${p.slug}/`}>{p.data.title}</a>{p.data.description && <span class="desc"> — {p.data.description}</span>}</span>
-      </li>
-    ))}
-    <li>
-      <span class="tag">blog</span>
-      <span class="row-text"><a href="/blog/">all posts</a> <span class="desc">— work, and everything else.</span></span>
-    </li>
-    <li>
-      <span class="tag">medium</span>
-      <span class="row-text"><a href="https://medium.com/@varunlohade">@varunlohade</a> <span class="desc">— older essays.</span></span>
-    </li>
-  </ul>
-
   <h2>Now</h2>
   <ul>
-    <li>
-      <span class="tag">thinking</span>
-      <span class="row-text">parallel agents interacting with each other to process interactions faster.</span>
-    </li>
     <li>
       <span class="tag">learning</span>
       <span class="row-text"><em>Modern Robotics</em> — Kevin Lynch, Northwestern.</span>

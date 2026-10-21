@@ -311,7 +311,7 @@ function sample(wx, wy, ix, iy, t, thr) {
   if (wy < C_NEAR + 0.1) {
     if (!clouds(wx, wy, ix, thr)) {
       oc = ramp(CLOUDR, 0.3, thr);
-      ov = 0.08;
+      ov = 0.12;
     }
     if (sstep(C_NEAR - 0.16, C_NEAR + 0.1, wy) > thr) fog(wx, wy, t, thr);
     return;
@@ -344,17 +344,15 @@ function layoutClouds() {
     var cz = (cb + 1) / NB;
     CB.push([
       HZ + 0.008 + (C_NEAR + 0.12 - HZ) * Math.pow(cz, 1.7),
-      0.02 + 0.17 * Math.pow(cz, 1.4),
-      (0.045 + 0.26 * Math.pow(cz, 1.2)) * wf,
+      0.022 + 0.2 * Math.pow(cz, 1.4),
+      (0.05 + 0.3 * Math.pow(cz, 1.2)) * wf,
       0.002 + 0.007 * cz,
     ]);
   }
 }
-var CLOUD_GAP = 0.5; // share of puffs left out, so open sky shows between
-function dome(x, seed, t, gap) {
+function dome(x, seed, t) {
   var k = Math.floor(x),
     s = 2 * (x - k) - 1;
-  if (gap && hash2(k, seed + 50) < gap) return 0;
   var h = 0.25 + 0.75 * Math.pow(hash2(k, seed), 1.5);
   h *= 0.86 + 0.14 * Math.sin(t * 0.13 + k * 2.3 + seed); // puffs slowly swell
   return h * Math.sqrt(Math.max(0, 1 - s * s));
@@ -363,10 +361,7 @@ function dome(x, seed, t, gap) {
 function puff(b, wx, t) {
   var P = CB[b];
   var x = (wx + t * P[3]) / P[2] + b * 7.31;
-  var v = Math.max(
-    dome(x, b * 3 + 1, t, CLOUD_GAP),
-    0.7 * dome(x + 0.5, b * 3 + 2, t, CLOUD_GAP),
-  );
+  var v = Math.max(dome(x, b * 3 + 1, t), 0.7 * dome(x + 0.5, b * 3 + 2, t));
   var lumps = Math.max(
     dome(x * 2.3, b * 3 + 3, t),
     dome(x * 2.3 + 0.5, b * 3 + 4, t),
@@ -388,7 +383,7 @@ function clouds(wx, wy, ix, thr) {
     if (wy < P[0] - P[1] * 1.3) continue;
     var j = b * S + ix + 1;
     var top = P[0] - P[1] * PF[j];
-    if (wy < top || wy > P[0] + P[1] * 0.6 * PF[j]) continue; // rounded underside
+    if (wy < top) continue;
     var z = (b + 1) / NB;
     var d = (wy - top) / P[1]; // 0 at the sunlit top, grows into the shadow
     var sunSide = Math.exp(-Math.pow((wx - SX) / (A * 0.55), 2));
@@ -405,8 +400,8 @@ function clouds(wx, wy, ix, thr) {
       0.12 * haze * sunSide;
     var val =
       0.06 +
-      0.15 * body +
-      0.1 * face * body +
+      0.2 * body +
+      0.12 * face * body +
       rim * (0.22 + 0.5 * sunSide) +
       0.06 * haze;
     oc = ramp(CLOUDR, e, thr);

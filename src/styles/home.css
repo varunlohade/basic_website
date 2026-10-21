@@ -320,7 +320,7 @@ html.frozen #page {
 /* footer */
 .portfolio-footer {
   margin: 0;
-  padding: 0 0 calc(28px + 30vh); /* room for the sea below the footer */
+  padding: 30vh 0 28px; /* room for the sea above the closing line */
   border: 0;
   font-family: inherit;
   font-size: 1rem;

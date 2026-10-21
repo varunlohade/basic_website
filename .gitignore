@@ -11,3 +11,6 @@ dist/
 *.pem
 *.key
 coverage/
+
+# Local design work (drafts, logs, local paths) - never publish
+design/

@@ -17,7 +17,6 @@ html.frozen #page {
   --line: rgba(242, 239, 232, 0.12);
   --surface: #0c0d11;
   --ember: #f6a641;
-  --gold: #f2c46d;
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   max-width: none;
   padding: 0;
@@ -279,8 +278,8 @@ html.frozen #page {
   margin-bottom: 0;
 }
 .stat-line {
-  color: var(--gold) !important;
-  font-weight: 500;
+  color: var(--fg) !important;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .stat-row {

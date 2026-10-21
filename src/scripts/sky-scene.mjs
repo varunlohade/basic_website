@@ -1,7 +1,13 @@
 /* Sky to sea: one camera descends through a dot-drawn world behind the page.
    World units: 1 = one viewport height. y grows downward.
    ?p=0..1 sets scroll progress, ?t=seconds sets animation time (deterministic). */
-import { buildAnchors, makeCamera, depthLabel } from './sky-camera.mjs';
+import {
+  buildAnchors,
+  makeCamera,
+  depthLabel,
+  metresAt,
+  WORLD,
+} from './sky-camera.mjs';
 
 // ---------- params ----------
 var qs = new URLSearchParams(location.search);
@@ -80,13 +86,15 @@ var WATR = [C.deep0, C.deep1, C.sea, C.teal];
 var CORALS = [C.coral, C.pink, C.violet, C.yellow, C.coral, C.pink];
 
 // ---------- world layout ----------
-var HZ = 0.66; // cloud-sea horizon
-var C_NEAR = 1.22; // cloud plain gives way to fog
-var C_BASE = 1.86; // underside of the cloud deck
-var GROUND = 2.5; // waterline under the city
-var FLOOR = 3.74; // reef floor
-var CY_TOP = 0.5,
-  CY_BOT = 3.42;
+var HZ = WORLD.HZ;
+var C_NEAR = WORLD.C_NEAR;
+var C_BASE = WORLD.C_BASE;
+var GROUND = WORLD.GROUND;
+var FLOOR = WORLD.FLOOR;
+var CY_TOP = WORLD.CY_TOP,
+  CY_BOT = WORLD.CY_BOT;
+var TOWER_H = GROUND - WORLD.TOWER_TOP;
+var MAX_B = WORLD.MAX_BUILDING;
 
 // ---------- noise ----------
 function hash2(x, y) {
@@ -174,6 +182,7 @@ function layoutWorld() {
   TW1 = BX0 + (BX1 - BX0) * 0.3;
   TW2 = BX1 - (BX1 - BX0) * 0.12;
   MASTX = DTX + 0.11;
+  layoutClouds();
 }
 function envelope(wx) {
   var e =
@@ -191,8 +200,9 @@ function nearHeight(wx) {
   var kk = merge ? k - 1 : k;
   if (!merge && lx < 0.16) return 0;
   var h = hash2(kk, 7);
-  var ht = (0.04 + 0.33 * Math.pow(h, 1.8)) * envelope(wx);
-  if (hash2(kk, 11) > 0.8) ht += 0.1 * envelope(wx);
+  var ht = (0.035 + 0.27 * Math.pow(h, 1.8)) * envelope(wx);
+  if (hash2(kk, 11) > 0.8) ht += 0.075 * envelope(wx);
+  if (ht > MAX_B) ht = MAX_B;
   _bid = kk;
   _blx = merge ? (lx + 1) / 2 : (lx - 0.16) / 0.84;
   return ht;
@@ -203,7 +213,16 @@ function farHeight(wx) {
     lx = f - k;
   if (lx < 0.12) return 0;
   var h = hash2(k, 21);
-  return (0.1 + 0.38 * Math.pow(h, 1.5)) * (0.35 + 0.75 * envelope(wx)) + 0.03;
+  return (0.06 + 0.2 * Math.pow(h, 1.5)) * (0.35 + 0.75 * envelope(wx)) + 0.02;
+}
+// A window keeps its own slow on/off schedule (9-23 s), so only a few
+// switch at any moment. Returns a light colour index, or -1 when dark.
+function windowLight(gx, gy, bid, t) {
+  var hh = hash2(gx * 7 + bid, gy + 101);
+  var per = 9 + 14 * hash2(gx, gy + 3);
+  var ep = Math.floor(t / per + hash2(gy, gx + 5));
+  if (hash2(gx * 7 + bid + ep * 131, gy + 101 + ep * 17) < 0.45) return -1;
+  return hh > 0.93 ? C.cyan : hh > 0.8 ? C.cream : C.win;
 }
 // returns light colour index (or -1) for city lights at world (wx, wy); used by reflections
 function cityLight(wx, wy, t) {
@@ -219,8 +238,7 @@ function cityLight(wx, wy, t) {
     var gx2 = Math.floor(wx / CW),
       gy2 = Math.floor(up / CW);
     if ((gx2 & 1) === 0 && gy2 % 3 !== 0 && up < nh - CW * 1.5) {
-      var hh = hash2(gx2 * 7 + _bid, gy2 + 101);
-      if (hh > 0.42) return hh > 0.93 ? C.cyan : hh > 0.8 ? C.cream : C.win;
+      return windowLight(gx2, gy2, _bid, t);
     }
   }
   return -1;
@@ -237,6 +255,7 @@ function sample(wx, wy, ix, iy, t, thr) {
   var rip =
     0.006 * Math.sin(wx * 9 + t * 0.25) + 0.004 * Math.sin(wx * 23 - t * 0.4);
   var hz = HZ + rip;
+  if (wy < hz && wy > HZ - 0.03 && clouds(wx, wy, t, thr)) return;
   if (wy < hz) {
     var g = clamp01(wy / HZ);
     oc = ramp(SKYR, Math.pow(g, 1.35), thr);
@@ -267,7 +286,7 @@ function sample(wx, wy, ix, iy, t, thr) {
       if (dy > -SR * 0.15) {
         // bands of cloud across the lower disc
         var band = Math.sin(
-          (dy + 0.004 * Math.sin(wx * 60 + t)) * 300 + t * 0.6,
+          (dy + 0.004 * Math.sin(wx * 60 + t)) * 300 + t * 1.4,
         );
         if (band > 0.55) {
           oc = C.amber;
@@ -277,44 +296,20 @@ function sample(wx, wy, ix, iy, t, thr) {
     } else if (d < SR * 3.4) {
       var k = Math.pow(1 - (d - SR) / (SR * 2.4), 2);
       if (k > 0) {
-        ov += 0.5 * k;
+        ov += 0.5 * k * (0.78 + 0.22 * Math.sin(d * 140 - t * 2.2));
         if (k > 0.55 - thr * 0.3) oc = k > 0.75 ? C.amber : C.ember;
       }
     }
     return;
   }
 
-  // ------- cloud sea plain (perspective) -------
+  // ------- cloud sea: rows of cumulus -------
   if (wy < C_NEAR + 0.1) {
-    var q = wy - HZ;
-    var z = 1 / (q * 6 + 0.06);
-    var u = wx * z * 4.2,
-      w = z * 3.2 - t * 0.09;
-    var dn = fbm(u, w),
-      dn2 = fbm(u, w + 0.22);
-    var ridge = dn - dn2; // >0: the top edge of a billow, facing the sun
-    var hzg = Math.exp(-q * 8);
-    var path =
-      Math.exp(-Math.pow((wx - SX) / (0.03 + q * 0.32), 2)) *
-      Math.exp(-q * 3.2);
-    var side = 0.55 + 0.45 * Math.exp(-Math.pow((wx - SX) / (A * 0.9), 2)); // brighter toward the sun
-    var rim = sstep(0.008, 0.045, ridge) * sstep(0.42, 0.56, dn);
-    var body = sstep(0.42, 0.62, dn);
-    var e =
-      0.12 + 0.3 * body + 0.35 * rim + 0.4 * hzg + 0.5 * path * (0.3 + rim);
-    var val =
-      0.07 +
-      0.2 * body * side +
-      0.55 * rim * side * (0.5 + path) +
-      0.25 * hzg * dn +
-      0.35 * path * body;
-    var near = sstep(0.12, 0.56, q);
-    val *= 1 - 0.38 * near;
-    oc = ramp(CLOUDR, e * side * (1 - 0.3 * near), thr);
-    ov = val;
-    // dissolve into the fog below
-    var mix = sstep(C_NEAR - 0.16, C_NEAR + 0.1, wy);
-    if (mix > thr) fog(wx, wy, t, thr);
+    if (!clouds(wx, wy, t, thr)) {
+      oc = ramp(CLOUDR, 0.3, thr);
+      ov = 0.12;
+    }
+    if (sstep(C_NEAR - 0.16, C_NEAR + 0.1, wy) > thr) fog(wx, wy, t, thr);
     return;
   }
 
@@ -333,6 +328,73 @@ function sample(wx, wy, ix, iy, t, thr) {
 
   // ------- under the water -------
   water(wx, wy, t, thr);
+}
+
+// ---------- cloud sea: rows of cumulus, small and far to big and near ----------
+var NB = 14;
+var CB = []; // [base y, puff height, puff width, drift per second]
+function layoutClouds() {
+  var wf = Math.min(1, Math.max(0.5, A / 0.8)); // narrower puffs on phones
+  CB = [];
+  for (var cb = 0; cb < NB; cb++) {
+    var cz = (cb + 1) / NB;
+    CB.push([
+      HZ + 0.008 + (C_NEAR + 0.12 - HZ) * Math.pow(cz, 1.7),
+      0.022 + 0.2 * Math.pow(cz, 1.4),
+      (0.05 + 0.3 * Math.pow(cz, 1.2)) * wf,
+      0.002 + 0.007 * cz,
+    ]);
+  }
+}
+function dome(x, seed, t) {
+  var k = Math.floor(x),
+    s = 2 * (x - k) - 1;
+  var h = 0.25 + 0.75 * Math.pow(hash2(k, seed), 1.5);
+  h *= 0.86 + 0.14 * Math.sin(t * 0.13 + k * 2.3 + seed); // puffs slowly swell
+  return h * Math.sqrt(Math.max(0, 1 - s * s));
+}
+// height of row b's skyline at wx, in units of that row's puff height
+function puff(b, wx, t) {
+  var P = CB[b];
+  var x = (wx + t * P[3]) / P[2] + b * 7.31;
+  var v = Math.max(dome(x, b * 3 + 1, t), 0.7 * dome(x + 0.5, b * 3 + 2, t));
+  var lumps = Math.max(
+    dome(x * 2.3, b * 3 + 3, t),
+    dome(x * 2.3 + 0.5, b * 3 + 4, t),
+  );
+  return v * (0.8 + 0.25 * lumps); // cauliflower lumps on each puff
+}
+function clouds(wx, wy, t, thr) {
+  for (var b = NB - 1; b >= 0; b--) {
+    var P = CB[b];
+    if (wy < P[0] - P[1] * 1.3) continue;
+    var top = P[0] - P[1] * puff(b, wx, t);
+    if (wy < top) continue;
+    var z = (b + 1) / NB;
+    var d = (wy - top) / P[1]; // 0 at the sunlit top, grows into the shadow
+    var sunSide = Math.exp(-Math.pow((wx - SX) / (A * 0.55), 2));
+    var slope = ((puff(b, wx + CW, t) - puff(b, wx - CW, t)) * P[2]) / (2 * CW);
+    var face = clamp01(0.5 + 0.35 * slope * (SX > wx ? 1 : -1));
+    var rim = Math.exp(-d / (0.1 + 0.08 * (1 - z)));
+    var body = 1 - sstep(0.05, 1.5, d); // lit top fading to a shadowed base
+    var haze = 1 - z;
+    var e =
+      0.08 +
+      0.2 * body +
+      0.15 * face * body +
+      rim * (0.15 + 0.6 * sunSide) +
+      0.12 * haze * sunSide;
+    var val =
+      0.06 +
+      0.2 * body +
+      0.12 * face * body +
+      rim * (0.22 + 0.5 * sunSide) +
+      0.06 * haze;
+    oc = ramp(CLOUDR, e, thr);
+    ov = val;
+    return true;
+  }
+  return false;
 }
 
 function fog(wx, wy, t, thr) {
@@ -382,65 +444,10 @@ function city(wx, wy, t, thr) {
     return;
   }
   // bridge
-  if (wx > BX0 && wx < BX1 + 0.02) {
-    var deckY = GROUND - 0.045,
-      topY = GROUND - 0.23;
-    var gxb = Math.floor(wx / CW);
-    if (Math.abs(wy - deckY) < CW * 0.7) {
-      oc = gxb % 3 === 0 ? C.win : C.night2;
-      ov = gxb % 3 === 0 ? 0.85 : 0.35;
-      return;
-    }
-    if (wy > deckY && wy < GROUND - CW * 1.5) {
-      // piers
-      if (Math.abs(wx - TW1) < CW * 1.2 || Math.abs(wx - TW2) < CW * 1.2) {
-        oc = C.night2;
-        ov = 0.22;
-        return;
-      }
-    }
-    // towers
-    for (var ti = 0; ti < 2; ti++) {
-      var tx = ti ? TW2 : TW1;
-      if (Math.abs(wx - tx) < CW * 1.1 && wy > topY && wy < deckY) {
-        oc = C.night2;
-        ov = 0.42;
-        if (wy < topY + CW * 1.5) {
-          oc = C.red;
-          ov = Math.sin(t * 2.4 + ti) > 0.2 ? 0.95 : 0.35;
-        }
-        return;
-      }
-    }
-    // cables
-    var cy;
-    var mid = (TW1 + TW2) / 2,
-      half = (TW2 - TW1) / 2;
-    if (wx >= TW1 && wx <= TW2) {
-      var s = (wx - mid) / half;
-      cy = deckY - 0.012 - (deckY - 0.012 - topY) * s * s;
-    } else if (wx < TW1) {
-      var s2 = (TW1 - wx) / (TW1 - BX0);
-      cy = topY + (deckY - topY) * Math.pow(s2, 0.75);
-    } else {
-      var s3 = (wx - TW2) / (BX1 + 0.02 - TW2);
-      cy = topY + (deckY - topY) * Math.pow(Math.min(1, s3), 0.75);
-    }
-    if (Math.abs(wy - cy) < CW * 0.65) {
-      var lamp = gxb % 4 === 0;
-      oc = lamp ? C.cream : C.cyan;
-      ov = lamp ? 0.9 : 0.5;
-      return;
-    }
-    if (wy > cy && wy < deckY && gxb % 3 === 0) {
-      oc = C.cyan;
-      ov = 0.16;
-      return;
-    }
-  }
+  if (wx > BX0 && wx < BX1 + 0.02 && bridge(wx, wy, up, t)) return;
   // radio mast
   if (Math.abs(wx - MASTX) < CW * 0.55) {
-    var mh = 0.5 * Math.max(0.6, envelope(MASTX));
+    var mh = MAX_B * 0.97;
     if (up < mh) {
       if (up > mh - CW * 1.5) {
         oc = C.red;
@@ -475,11 +482,9 @@ function city(wx, wy, t, thr) {
       blx > 0.05 &&
       blx < 0.95
     ) {
-      var hh = hash2(gx2 * 7 + bid, gy2 + 101);
-      var on = hh > 0.42;
-      if (hh > 0.4 && hh < 0.47) on = Math.floor(t * 0.35 + hh * 40) % 2 === 0;
-      if (on) {
-        oc = hh > 0.93 ? C.cyan : hh > 0.8 ? C.cream : C.win;
+      var wl = windowLight(gx2, gy2, bid, t);
+      if (wl >= 0) {
+        oc = wl;
         ov = 0.55 + 0.4 * hash2(gx2, gy2 + 7);
       } else {
         oc = C.night1;
@@ -487,7 +492,7 @@ function city(wx, wy, t, thr) {
       }
     }
     // beacon on tall roofs
-    if (nh > 0.22 && up > nh - CW * 1.2 && blx > 0.4 && blx < 0.6) {
+    if (nh > 0.2 && up > nh - CW * 1.2 && blx > 0.4 && blx < 0.6) {
       oc = C.red;
       ov = Math.sin(t * 2 + bid) > 0.3 ? 0.95 : 0.3;
     }
@@ -499,11 +504,127 @@ function city(wx, wy, t, thr) {
       gy3 = Math.floor(up / CW);
     oc = C.night1;
     ov = 0.14;
-    if ((gx3 & 1) === 1 && (gy3 & 1) === 0 && hash2(gx3 * 3, gy3 + 55) > 0.72) {
+    if (
+      (gx3 & 1) === 1 &&
+      (gy3 & 1) === 0 &&
+      hash2(gx3 * 3, gy3 + 55) > 0.55 &&
+      windowLight(gx3, gy3 + 500, 9, t) >= 0
+    ) {
       oc = hash2(gx3, gy3) > 0.5 ? C.cyan : C.win;
       ov = 0.32;
     }
   }
+}
+
+// Suspension bridge, drawn on world-locked cells: two braced towers,
+// main cables with suspenders, a railed deck and cars in both directions.
+function bridge(wx, wy, up, t) {
+  var gx = Math.floor(wx / CW),
+    r = Math.floor(up / CW);
+  var rd = Math.round(0.045 / CW),
+    rt = Math.round(TOWER_H / CW);
+  for (var ti = 0; ti < 2; ti++) {
+    var dx = gx - Math.round((ti ? TW2 : TW1) / CW);
+    if (dx < -3 || dx > 3 || r > rt + 1) continue;
+    var leg = dx === -3 || dx === 3;
+    if (r === rt + 1) {
+      // aviation lights on top of each leg
+      if (!leg) return false;
+      var blink = (t * 0.62 + ti * 0.37 + (dx > 0 ? 0.08 : 0)) % 1 < 0.35;
+      oc = C.red;
+      ov = blink ? 1 : 0.3;
+      return true;
+    }
+    if (leg) {
+      oc = C.night2;
+      ov = r > rd ? 0.62 : 0.36;
+      return true;
+    }
+    if (r > rd + 1) {
+      var k = (rt - r) % 6;
+      if (k === 0) {
+        oc = C.night2; // portal strut
+        ov = 0.6;
+        return true;
+      }
+      if (Math.abs(dx) === Math.abs(k - 3)) {
+        oc = C.cyan; // X bracing
+        ov = 0.36;
+        return true;
+      }
+      oc = C.night0; // open panel: dark, so the bracing reads
+      ov = 0.04;
+      return true;
+    }
+  }
+  // cars: white headlights heading east, red tail lights heading west
+  if (r === rd + 1 || r === rd + 2) {
+    var west = r === rd + 2;
+    var v = west ? -0.017 : 0.022;
+    var gap = 7;
+    var p = (wx - v * t) / CW;
+    var slot = Math.floor(p / gap),
+      f = p - slot * gap;
+    if (hash2(slot, west ? 41 : 40) > 0.4) {
+      if (f >= 1 && f < 2) {
+        oc = west ? C.red : C.cream;
+        ov = 0.95;
+        return true;
+      }
+      if (f < 1) {
+        oc = C.night2;
+        ov = 0.45;
+        return true;
+      }
+      if (!west && f < 3) {
+        oc = C.cream;
+        ov = 0.3;
+        return true;
+      }
+    }
+  }
+  if (r === rd) {
+    oc = gx % 4 === 0 ? C.win : C.night2; // deck with lamps
+    ov = gx % 4 === 0 ? 0.85 : 0.42;
+    return true;
+  }
+  if (r === rd - 1 && (gx + r) % 2 === 0) {
+    oc = C.night2; // truss under the deck
+    ov = 0.24;
+    return true;
+  }
+  if (r === rd + 3 && gx % 2 === 0) {
+    oc = gx % 8 === 0 ? C.cream : C.night2; // railing and lamp posts
+    ov = gx % 8 === 0 ? 0.7 : 0.3;
+    return true;
+  }
+  // main cables
+  var deckY = GROUND - 0.045,
+    topY = GROUND - TOWER_H;
+  var mid = (TW1 + TW2) / 2,
+    half = (TW2 - TW1) / 2,
+    cy;
+  if (wx >= TW1 && wx <= TW2) {
+    var s = (wx - mid) / half;
+    cy = deckY - 0.02 - (deckY - 0.02 - topY) * s * s;
+  } else if (wx < TW1) {
+    cy = topY + (deckY - topY) * Math.pow((TW1 - wx) / (TW1 - BX0), 0.75);
+  } else {
+    var s3 = Math.min(1, (wx - TW2) / (BX1 + 0.02 - TW2));
+    cy = topY + (deckY - topY) * Math.pow(s3, 0.75);
+  }
+  if (Math.abs(wy - cy) < CW * 0.6) {
+    oc = gx % 4 === 0 ? C.cream : C.cyan;
+    ov = gx % 4 === 0 ? 0.9 : 0.55;
+    return true;
+  }
+  // vertical suspenders from the cable to the deck
+  if (wy > cy && r > rd + 3 && gx % 2 === 0) {
+    oc = C.cyan;
+    ov = 0.3;
+    return true;
+  }
+  return false;
 }
 
 function water(wx, wy, t, thr) {
@@ -520,10 +641,11 @@ function water(wx, wy, t, thr) {
   oc = ramp(WATR, e * 0.95, thr);
   ov = 0.05 + 0.16 * e;
   // light shafts slanting down from the surface
-  var s = wx + q * 0.28;
+  var s = wx + q * (0.28 + 0.05 * Math.sin(t * 0.3));
   var sh =
-    vnoise(s * 15 + t * 0.07, 3.3) * 0.6 + vnoise(s * 37 - t * 0.05, 8.1) * 0.4;
+    vnoise(s * 15 + t * 0.12, 3.3) * 0.6 + vnoise(s * 37 - t * 0.09, 8.1) * 0.4;
   sh = sstep(0.6, 0.86, sh) * Math.exp(-q * 0.85) * sstep(0, 0.06, q);
+  sh *= 0.75 + 0.25 * Math.sin(t * 0.9 + s * 25);
   if (sh > 0.02) {
     ov += 0.42 * sh;
     if (sh > thr * 0.8) oc = sh > 0.45 ? C.aqua : C.teal;
@@ -580,9 +702,11 @@ function water(wx, wy, t, thr) {
               CORALS.length,
           )
         ];
-      var bump = Math.sin(wx * 260 + Math.sin(wy * 220) * 3) > -0.2;
+      var bump =
+        Math.sin(wx * 260 + Math.sin(wy * 220 + t * 0.9) * 3 + t * 0.5) > -0.2;
       oc = kind;
       ov = bump ? 0.6 + 0.35 * (cl - 0.56) * 2.2 : 0.3;
+      ov *= 0.82 + 0.18 * Math.sin(t * 1.7 + wx * 40 + wy * 25);
     }
     return;
   }
@@ -599,18 +723,28 @@ function put(wx, wy, c, v, cy) {
     vv[i] = v;
   }
 }
+// A hint-sized plane: red and green wingtips, a blinking red beacon and a
+// white tail strobe. dir = 1 flies east, -1 west.
+function plane(x, y, dir, t, cy, phase) {
+  put(x, y, C.mist1, 0.5, cy);
+  put(x - dir * CW, y, C.mist1, 0.4, cy);
+  put(x + dir * CW, y + CW, dir > 0 ? C.red : C.kelp, 0.85, cy);
+  put(x + dir * CW, y - CW, dir > 0 ? C.kelp : C.red, 0.85, cy);
+  if ((t * 1.1 + phase) % 1 < 0.5) put(x, y - CW, C.red, 0.95, cy);
+  if ((t * 0.8 + phase) % 1 < 0.1) put(x - dir * CW * 2, y, C.foam, 1, cy);
+}
 function sprites(t, cy) {
   var top = cy - 0.5,
     bot = cy + 0.5;
 
-  // a plane crossing under the cloud deck
-  var py = C_BASE + 0.16;
-  if (py > top && py < bot) {
-    var span = 2 * A + 0.4;
-    var px = -A - 0.2 + ((t * 0.018) % span);
-    put(px, py, Math.floor(t * 1.5) % 2 ? C.red : C.cream, 0.95, cy);
-    put(px - CW * 2, py, C.cream, 0.4, cy);
-  }
+  // now and then a plane: high in the sunset, and low over the night city
+  var span = 2 * A + 1.5;
+  var sy = 0.28 + 0.01 * Math.sin(t * 0.05);
+  if (sy > top && sy < bot)
+    plane(-A - 0.1 + ((t * 0.02 + A * 0.8) % span), sy, 1, t, cy, 0);
+  var ny = C_BASE + 0.19;
+  if (ny > top && ny < bot)
+    plane(A + 0.1 - ((t * 0.03 + A * 0.6) % span), ny, -1, t, cy, 0.5);
 
   if (bot < GROUND) return;
 
@@ -825,7 +959,7 @@ var gaugeEl = document.getElementById('gauge'),
 var gaugeTxt = '',
   gaugePos = '';
 function gauge(cy) {
-  var txt = depthLabel(cy, GROUND);
+  var txt = depthLabel(metresAt(cy));
   if (txt !== gaugeTxt) {
     gaugeEl.textContent = txt;
     gaugeTxt = txt;

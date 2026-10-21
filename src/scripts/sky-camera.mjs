@@ -57,11 +57,47 @@ export function makeCamera(anchors) {
   };
 }
 
-// Depth meter text: altitude above the waterline, metres below it.
-export function depthLabel(cy, ground) {
-  if (cy < ground) {
-    const m = Math.round(((ground - cy) * 1500) / 10) * 10;
+// World layout shared by the scene and the depth meter (y grows downward).
+export const WORLD = {
+  CY_TOP: 0.5, // camera centre at the top of the page
+  HZ: 0.66, // cloud tops / horizon of the cloud sea
+  C_NEAR: 1.22, // cloud sea gives way to fog
+  C_BASE: 1.86, // underside of the cloud deck
+  TOWER_TOP: 2.27, // bridge tower tops
+  GROUND: 2.5, // waterline
+  FLOOR: 3.74, // reef floor
+  CY_BOT: 3.42, // camera centre at the bottom of the page
+  MAX_BUILDING: 0.38, // tallest building, in world units above the water
+};
+
+// Real heights at each landmark. Below the cloud base the city uses one
+// scale (1 unit = 1,000 m), so towers and buildings read true to size.
+export const LANDMARKS = [
+  [WORLD.CY_TOP, 3000],
+  [WORLD.HZ, 2000],
+  [WORLD.C_BASE, 900],
+  [WORLD.GROUND - 0.4, 400],
+  [WORLD.TOWER_TOP, 230],
+  [WORLD.GROUND, 0],
+  [WORLD.FLOOR, -30],
+];
+
+// Metres above (+) or below (-) the waterline at world depth y.
+export function metresAt(y, marks = LANDMARKS) {
+  let i = 0;
+  if (y > marks[marks.length - 1][0]) i = marks.length - 2;
+  else while (i < marks.length - 2 && y > marks[i + 1][0]) i++;
+  const [y0, m0] = marks[i];
+  const [y1, m1] = marks[i + 1];
+  return m0 + ((y - y0) / (y1 - y0)) * (m1 - m0);
+}
+
+// Depth meter text: tens of metres in the air, single metres under water.
+export function depthLabel(metres) {
+  if (metres >= 0.5) {
+    const m = Math.round(metres / 10) * 10;
     return m.toLocaleString('en-US') + ' m';
   }
-  return '−' + Math.round((cy - ground) * 30) + ' m';
+  const d = Math.round(-metres);
+  return d === 0 ? '0 m' : '−' + d + ' m';
 }

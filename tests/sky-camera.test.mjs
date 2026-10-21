@@ -4,6 +4,8 @@ import {
   buildAnchors,
   makeCamera,
   depthLabel,
+  metresAt,
+  WORLD,
 } from '../src/scripts/sky-camera.mjs';
 
 test('anchors are strictly increasing and end at maxY', () => {
@@ -44,7 +46,28 @@ test('camera hits anchors, clamps at the ends, and never goes back up', () => {
   }
 });
 
-test('depth label reads altitude above water and metres below', () => {
-  assert.equal(depthLabel(0.5, 2.5), '3,000 m');
-  assert.equal(depthLabel(3.42, 2.5), '−28 m');
+test('depth meter matches real heights at each landmark', () => {
+  assert.equal(depthLabel(metresAt(WORLD.CY_TOP)), '3,000 m');
+  assert.equal(depthLabel(metresAt(WORLD.HZ)), '2,000 m');
+  assert.equal(depthLabel(metresAt(WORLD.C_BASE)), '900 m');
+  assert.equal(depthLabel(metresAt(WORLD.TOWER_TOP)), '230 m');
+  assert.equal(depthLabel(metresAt(WORLD.GROUND)), '0 m');
+  assert.equal(depthLabel(metresAt(WORLD.FLOOR)), '−30 m');
+  const reef = metresAt(WORLD.CY_BOT);
+  assert.ok(reef <= -20 && reef >= -30, `bottom reads ${reef}`);
+});
+
+test('tallest building stands 300-400 m, above the bridge towers', () => {
+  const top = metresAt(WORLD.GROUND - WORLD.MAX_BUILDING);
+  assert.ok(top >= 300 && top <= 400, `building top reads ${top}`);
+  assert.ok(top > metresAt(WORLD.TOWER_TOP));
+});
+
+test('height falls steadily from the sky to the reef', () => {
+  let prev = Infinity;
+  for (let y = WORLD.CY_TOP; y <= WORLD.CY_BOT; y += 0.01) {
+    const m = metresAt(y);
+    assert.ok(m < prev, `height rose at ${y}`);
+    prev = m;
+  }
 });

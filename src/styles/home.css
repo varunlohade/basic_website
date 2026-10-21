@@ -106,7 +106,7 @@
   font-weight: 400;
 }
 .wordmark b {
-  color: #ccec9d;
+  color: var(--fg);
   font-weight: 600;
 }
 .site-header nav {
@@ -116,11 +116,11 @@
   font-size: 0.875rem;
 }
 .site-header .nav-contact {
-  background: #f8faf6;
-  color: #203c32 !important;
+  background: #fff;
+  color: var(--fg) !important;
+  border: 1px solid var(--line);
   padding: 0.7rem 1.1rem;
   border-radius: 5px;
-  box-shadow: 0 2px #0d28232b;
 }
 .nav-contact span {
   margin-left: 1.3rem;
@@ -162,7 +162,7 @@
   gap: 3rem;
   align-items: center;
   background: var(--fg);
-  color: #f5f8ec;
+  color: #fff;
   border-radius: 5px;
   padding: 0.9rem 1.1rem;
   font-size: 0.875rem;
@@ -201,7 +201,7 @@
   font-family:
     JetBrains Mono,
     monospace;
-  color: #708176;
+  color: var(--muted);
   font-size: 0.8125rem;
   padding-top: 3px;
 }
@@ -209,7 +209,7 @@
   font-family:
     JetBrains Mono,
     monospace;
-  color: #556d60;
+  color: var(--muted);
   letter-spacing: 0.035em;
   font-size: 0.75rem;
 }
@@ -220,7 +220,7 @@
 }
 .work-item h3 span {
   font-size: 1.3rem;
-  color: #6c8975;
+  color: var(--muted);
   transition: transform 0.2s;
 }
 .work-item:hover h3 span {
@@ -235,6 +235,9 @@
 .stat-line {
   color: var(--fg);
   font-weight: 500;
+}
+.stat-line span {
+  white-space: nowrap;
 }
 .work-item .stat {
   text-decoration: underline;
@@ -302,7 +305,7 @@
   display: grid;
   grid-template-columns: 1fr 1.4fr;
   gap: 10%;
-  background: #eaf0e5;
+  background: #f4f4f4;
   padding: 65px;
   margin-bottom: 95px;
   border-radius: 4px;
@@ -315,7 +318,7 @@
 }
 .now-section dt {
   font-size: 0.8125rem;
-  color: #4e675b;
+  color: var(--muted);
   margin-bottom: 0.35rem;
 }
 .now-section dd {
@@ -361,7 +364,7 @@
   gap: 1.6rem;
 }
 .portfolio a:hover {
-  color: #407052;
+  color: var(--muted);
 }
 .portfolio .hero a:hover {
   color: #fff;

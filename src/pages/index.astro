@@ -4,6 +4,15 @@ import '../styles/home.css';
 ---
 
 <Base bodyClass="portfolio">
+  <div class="page-bg" aria-hidden="true">
+    <div
+      data-noise-field
+      data-mode="warp"
+      data-color="#000000"
+      data-alpha="0.12"
+    >
+    </div>
+  </div>
   <a class="skip-link" href="#work">Skip to work</a>
   <header class="site-header">
     <a class="wordmark" href="/" aria-label="Varun Lohade, home"
@@ -17,53 +26,6 @@ import '../styles/home.css';
   </header>
   <main>
     <section class="hero" aria-labelledby="hero-heading">
-      <div class="landscape">
-        <img
-          id="scene-poster"
-          class="is-placeholder"
-          src="data:image/jpeg;base64,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"
-          data-full-src="/art/backdrop.png"
-          alt=""
-          width="960"
-          height="540"
-        />
-        <noscript
-          ><img
-            src="/art/backdrop.png"
-            alt=""
-            width="960"
-            height="540"
-          /></noscript
-        >
-      </div>
-      <div class="scene-loader">
-        <p class="visually-hidden" role="status">Loading scene</p>
-        <div class="scene-loader-row" aria-hidden="true">
-          <span class="scene-loader-label" data-loader-label
-            >Loading algorithm to break the space-time continuum…</span
-          >
-          <span class="scene-loader-pct" data-loader-pct>0%</span>
-        </div>
-        <div
-          class="scene-loader-track"
-          role="progressbar"
-          aria-label="Scene assets"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="0"
-          data-loader-track
-        >
-          <span class="scene-loader-fill" data-loader-fill></span>
-        </div>
-      </div>
-      <noscript
-        ><style>
-          .scene-loader {
-            display: none;
-          }
-        </style></noscript
-      >
-      <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-copy">
         <p class="eyebrow">Software Engineer</p>
         <h1 id="hero-heading">Building experiences people love.</h1>
@@ -91,15 +53,47 @@ import '../styles/home.css';
               <span class="project-type">CRYPTO · FINTECH</span><h3>
                 Avici<span aria-hidden="true">↗</span>
               </h3><p>
+                A crypto-backed credit card — spend your crypto anywhere cards
+                work.<br /><strong class="stat-line"
+                  >Raised $3.5M · $700k+ revenue · $70M+ in transactions<br
+                  />200k+ downloads · ~40% M3 spend retention</strong
+                >
+              </p><p>
                 Former cofounder & founding engineer. Built the entire app solo,
-                from scratch — Flutter and backend.<br />Shipped AI agents in
-                Slack for support, design accountability, smarter research, and
-                bug fixes.
+                from scratch — Flutter and backend. Shipped AI agents in Slack
+                for support, design accountability, smarter research, and bug
+                fixes.
               </p>
             </div></a
           >
+          <div class="work-item">
+            <span class="work-number">02</span><div>
+              <span class="project-type">3D · WEB · CONCEPT</span><a
+                class="card-thumb"
+                href="https://workshop.varunlohade.com"
+                ><img
+                  src="/art/backdrop.png"
+                  alt="My old 3D workshop homepage: a pixel-art desk with a laptop under a tree, overlooking a river city"
+                  width="1672"
+                  height="941"
+                  loading="lazy"
+                /></a
+              ><h3>
+                <a href="https://workshop.varunlohade.com"
+                  >The workshop portfolio<span aria-hidden="true">↗</span></a
+                >
+              </h3><p>
+                My old homepage: a living 3D workshop built with Three.js, robot
+                arm and all.<br />It went viral — <a
+                  class="stat"
+                  href="https://x.com/orseliyas/status/2097307376143773730"
+                  >200k+ views on X ↗</a
+                >
+              </p>
+            </div>
+          </div>
           <a class="work-item" href="https://github.com/varunlohade/fixmahbug"
-            ><span class="work-number">02</span><div>
+            ><span class="work-number">03</span><div>
               <span class="project-type">AI · DEVELOPER TOOLS</span><h3>
                 fixmahbug<span aria-hidden="true">↗</span>
               </h3><p>
@@ -109,7 +103,7 @@ import '../styles/home.css';
             </div></a
           >
           <div class="work-item">
-            <span class="work-number">03</span><div>
+            <span class="work-number">04</span><div>
               <span class="project-type">ROBOTICS · EXPERIMENT</span><h3>
                 The robotic arm
               </h3><p>
@@ -156,5 +150,5 @@ import '../styles/home.css';
   </main>
 </Base>
 <script>
-  import '../scripts/landscape.mjs';
+  import '../scripts/noise-field.mjs';
 </script>

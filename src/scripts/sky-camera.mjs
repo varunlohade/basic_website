@@ -70,6 +70,22 @@ export const WORLD = {
   MAX_BUILDING: 0.38, // tallest building, in world units above the water
 };
 
+// Homepage scroll anchors. The descent is spread so the scene moves close
+// to page speed: clouds over the hero, the city as #work arrives, and the
+// sea from the moment the now section comes into view.
+export function sceneAnchors({ W, H, wTop, nTop, maxY }) {
+  const phone = W < 600;
+  return buildAnchors(
+    [
+      [0, WORLD.CY_TOP],
+      [wTop - H * 0.05, phone ? 1.9 : 2.0],
+      [nTop - H, phone ? 2.75 : 2.7],
+      [maxY, WORLD.CY_BOT],
+    ],
+    maxY,
+  );
+}
+
 // Real heights at each landmark. Below the cloud base the city uses one
 // scale (1 unit = 1,000 m), so towers and buildings read true to size.
 export const LANDMARKS = [

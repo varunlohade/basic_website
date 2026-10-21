@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildAnchors,
+  sceneAnchors,
   makeCamera,
   depthLabel,
   metresAt,
@@ -45,6 +46,43 @@ test('camera hits anchors, clamps at the ends, and never goes back up', () => {
     prev = c;
   }
 });
+
+// Homepage section positions measured at 1440x900 and 390x844.
+const LAYOUTS = {
+  desktop: { W: 1440, H: 900, wTop: 1232, nTop: 2794, docH: 3390 },
+  phone: { W: 390, H: 844, wTop: 1276, nTop: 3129, docH: 3725 },
+};
+
+for (const [name, l] of Object.entries(LAYOUTS)) {
+  const maxY = l.docH - l.H;
+  const cam = makeCamera(sceneAnchors({ ...l, maxY }));
+
+  test(`${name}: scene moves close to page speed in every tenth`, () => {
+    for (let k = 0; k < 10; k++) {
+      const a = (maxY * k) / 10;
+      const b = (maxY * (k + 1)) / 10;
+      const speed = ((cam(b) - cam(a)) * l.H) / (b - a);
+      assert.ok(
+        speed >= 0.6 && speed <= 1.4,
+        `band ${k}: scene moves ${speed.toFixed(2)}x page speed`,
+      );
+    }
+  });
+
+  test(`${name}: each scene lines up with its section`, () => {
+    assert.equal(cam(0), WORLD.CY_TOP);
+    assert.ok(cam(0) + 0.5 > WORLD.HZ, 'cloud sea shows under the hero');
+    const atWork = cam(l.wTop);
+    assert.ok(
+      atWork - 0.5 < WORLD.GROUND - WORLD.MAX_BUILDING / 2 &&
+        atWork + 0.5 > WORLD.GROUND - WORLD.MAX_BUILDING / 2,
+      `city skyline in view when work arrives (cy ${atWork})`,
+    );
+    const atNow = cam(l.nTop - l.H / 2);
+    assert.ok(atNow - 0.5 > WORLD.GROUND, `under water at now (cy ${atNow})`);
+    assert.equal(cam(maxY), WORLD.CY_BOT);
+  });
+}
 
 test('depth meter matches real heights at each landmark', () => {
   assert.equal(depthLabel(metresAt(WORLD.CY_TOP)), '3,000 m');

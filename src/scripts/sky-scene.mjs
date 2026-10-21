@@ -2,7 +2,7 @@
    World units: 1 = one viewport height. y grows downward.
    ?p=0..1 sets scroll progress, ?t=seconds sets animation time (deterministic). */
 import {
-  buildAnchors,
+  sceneAnchors,
   makeCamera,
   depthLabel,
   metresAt,
@@ -149,7 +149,7 @@ function ramp(arr, g, thr) {
 var cv = document.getElementById('sky');
 var ctx = cv ? cv.getContext('2d') : null;
 var W, H, DPR, CELL, COLS, ROWS, N, A, CW;
-var ci, vv, mask;
+var ci, vv, mask, hid, PF, WV, FY;
 function setup() {
   W = window.innerWidth;
   H = window.innerHeight;
@@ -165,7 +165,11 @@ function setup() {
   ci = new Uint8Array(N);
   vv = new Float32Array(N);
   mask = new Float32Array(N);
+  hid = new Uint8Array(N);
   layoutWorld();
+  PF = new Float32Array(NB * (COLS + 2));
+  WV = new Float32Array(COLS);
+  FY = new Float32Array(COLS);
 }
 
 // ---------- city ----------
@@ -255,7 +259,7 @@ function sample(wx, wy, ix, iy, t, thr) {
   var rip =
     0.006 * Math.sin(wx * 9 + t * 0.25) + 0.004 * Math.sin(wx * 23 - t * 0.4);
   var hz = HZ + rip;
-  if (wy < hz && wy > HZ - 0.03 && clouds(wx, wy, t, thr)) return;
+  if (wy < hz && wy > HZ - 0.03 && clouds(wx, wy, ix, thr)) return;
   if (wy < hz) {
     var g = clamp01(wy / HZ);
     oc = ramp(SKYR, Math.pow(g, 1.35), thr);
@@ -305,9 +309,9 @@ function sample(wx, wy, ix, iy, t, thr) {
 
   // ------- cloud sea: rows of cumulus -------
   if (wy < C_NEAR + 0.1) {
-    if (!clouds(wx, wy, t, thr)) {
+    if (!clouds(wx, wy, ix, thr)) {
       oc = ramp(CLOUDR, 0.3, thr);
-      ov = 0.12;
+      ov = 0.08;
     }
     if (sstep(C_NEAR - 0.16, C_NEAR + 0.1, wy) > thr) fog(wx, wy, t, thr);
     return;
@@ -327,7 +331,7 @@ function sample(wx, wy, ix, iy, t, thr) {
   }
 
   // ------- under the water -------
-  water(wx, wy, t, thr);
+  water(wx, wy, ix, t, thr);
 }
 
 // ---------- cloud sea: rows of cumulus, small and far to big and near ----------
@@ -340,15 +344,17 @@ function layoutClouds() {
     var cz = (cb + 1) / NB;
     CB.push([
       HZ + 0.008 + (C_NEAR + 0.12 - HZ) * Math.pow(cz, 1.7),
-      0.022 + 0.2 * Math.pow(cz, 1.4),
-      (0.05 + 0.3 * Math.pow(cz, 1.2)) * wf,
+      0.02 + 0.17 * Math.pow(cz, 1.4),
+      (0.045 + 0.26 * Math.pow(cz, 1.2)) * wf,
       0.002 + 0.007 * cz,
     ]);
   }
 }
-function dome(x, seed, t) {
+var CLOUD_GAP = 0.5; // share of puffs left out, so open sky shows between
+function dome(x, seed, t, gap) {
   var k = Math.floor(x),
     s = 2 * (x - k) - 1;
+  if (gap && hash2(k, seed + 50) < gap) return 0;
   var h = 0.25 + 0.75 * Math.pow(hash2(k, seed), 1.5);
   h *= 0.86 + 0.14 * Math.sin(t * 0.13 + k * 2.3 + seed); // puffs slowly swell
   return h * Math.sqrt(Math.max(0, 1 - s * s));
@@ -357,23 +363,36 @@ function dome(x, seed, t) {
 function puff(b, wx, t) {
   var P = CB[b];
   var x = (wx + t * P[3]) / P[2] + b * 7.31;
-  var v = Math.max(dome(x, b * 3 + 1, t), 0.7 * dome(x + 0.5, b * 3 + 2, t));
+  var v = Math.max(
+    dome(x, b * 3 + 1, t, CLOUD_GAP),
+    0.7 * dome(x + 0.5, b * 3 + 2, t, CLOUD_GAP),
+  );
   var lumps = Math.max(
     dome(x * 2.3, b * 3 + 3, t),
     dome(x * 2.3 + 0.5, b * 3 + 4, t),
   );
   return v * (0.8 + 0.25 * lumps); // cauliflower lumps on each puff
 }
-function clouds(wx, wy, t, thr) {
+// Row skylines depend only on the column, so each frame computes them once
+// per column (plus one either side for the slope) instead of once per cell.
+function cachePuffs(t) {
+  var S = COLS + 2;
+  for (var b = 0; b < NB; b++) {
+    for (var j = 0; j < S; j++) PF[b * S + j] = puff(b, -A + (j - 0.5) * CW, t);
+  }
+}
+function clouds(wx, wy, ix, thr) {
+  var S = COLS + 2;
   for (var b = NB - 1; b >= 0; b--) {
     var P = CB[b];
     if (wy < P[0] - P[1] * 1.3) continue;
-    var top = P[0] - P[1] * puff(b, wx, t);
-    if (wy < top) continue;
+    var j = b * S + ix + 1;
+    var top = P[0] - P[1] * PF[j];
+    if (wy < top || wy > P[0] + P[1] * 0.6 * PF[j]) continue; // rounded underside
     var z = (b + 1) / NB;
     var d = (wy - top) / P[1]; // 0 at the sunlit top, grows into the shadow
     var sunSide = Math.exp(-Math.pow((wx - SX) / (A * 0.55), 2));
-    var slope = ((puff(b, wx + CW, t) - puff(b, wx - CW, t)) * P[2]) / (2 * CW);
+    var slope = ((PF[j + 1] - PF[j - 1]) * P[2]) / (2 * CW);
     var face = clamp01(0.5 + 0.35 * slope * (SX > wx ? 1 : -1));
     var rim = Math.exp(-d / (0.1 + 0.08 * (1 - z)));
     var body = 1 - sstep(0.05, 1.5, d); // lit top fading to a shadowed base
@@ -386,8 +405,8 @@ function clouds(wx, wy, t, thr) {
       0.12 * haze * sunSide;
     var val =
       0.06 +
-      0.2 * body +
-      0.12 * face * body +
+      0.15 * body +
+      0.1 * face * body +
       rim * (0.22 + 0.5 * sunSide) +
       0.06 * haze;
     oc = ramp(CLOUDR, e, thr);
@@ -627,12 +646,23 @@ function bridge(wx, wy, up, t) {
   return false;
 }
 
-function water(wx, wy, t, thr) {
+// Surface wave and reef floor height depend only on the column.
+function cacheWater(t) {
+  for (var ix = 0; ix < COLS; ix++) {
+    var wx = -A + (ix + 0.5) * CW;
+    WV[ix] =
+      0.004 * Math.sin(wx * 31 + t * 1.4) + 0.003 * Math.sin(wx * 77 - t * 2.1);
+    FY[ix] =
+      FLOOR -
+      0.02 -
+      0.11 * fbm(wx * 3.2, 1.7) -
+      0.05 * Math.exp(-Math.pow((wx - A * 0.55) / 0.12, 2));
+  }
+}
+function water(wx, wy, ix, t, thr) {
   var q = wy - GROUND;
   // surface line
-  var wave =
-    0.004 * Math.sin(wx * 31 + t * 1.4) + 0.003 * Math.sin(wx * 77 - t * 2.1);
-  if (q < CW * 1.2 + wave) {
+  if (q < CW * 1.2 + WV[ix]) {
     oc = C.aqua;
     ov = 0.45 + 0.4 * (0.5 + 0.5 * Math.sin(wx * 140 + t * 3));
     return;
@@ -679,11 +709,7 @@ function water(wx, wy, t, thr) {
     ov = 0.28;
   }
   // reef floor
-  var fy =
-    FLOOR -
-    0.02 -
-    0.11 * fbm(wx * 3.2, 1.7) -
-    0.05 * Math.exp(-Math.pow((wx - A * 0.55) / 0.12, 2));
+  var fy = FY[ix];
   if (wy > fy) {
     var dep = wy - fy;
     var tex = fbm(wx * 16, wy * 16);
@@ -733,9 +759,48 @@ function plane(x, y, dir, t, cy, phase) {
   if ((t * 1.1 + phase) % 1 < 0.5) put(x, y - CW, C.red, 0.95, cy);
   if ((t * 0.8 + phase) % 1 < 0.1) put(x - dir * CW * 2, y, C.foam, 1, cy);
 }
+// A shooting star in the upper sky every 6-12 s. Each 9 s slot holds one,
+// starting up to 3 s in; a star whose path would cross text is skipped.
+var STAR_SLOT = 9;
+function shootingStar(t, cy) {
+  var n = Math.floor(t / STAR_SLOT);
+  var dur = 0.6 + 0.4 * hash2(n, 203);
+  var f = (t - n * STAR_SLOT - 3 * hash2(n, 201)) / dur;
+  if (f < 0 || f > 1) return;
+  var dir = hash2(n, 209) < 0.5 ? -1 : 1;
+  var len = 0.22 + 0.12 * hash2(n, 211);
+  var trail = 6 + Math.floor(7 * hash2(n, 213));
+  var dx = dir,
+    dy = 0.75;
+  var x0 = -A * 0.85 + 1.7 * A * hash2(n, 205),
+    y0 = 0.04 + 0.26 * hash2(n, 207);
+  // skip the whole star if any part of its path is in view near text
+  for (var s = -trail; s * CW <= len; s++) {
+    var ix = Math.floor((x0 + dx * s * CW + A) / CW),
+      iy = Math.floor((y0 + dy * s * CW - cy + 0.5) / CW);
+    if (ix < 0 || iy < 0 || ix >= COLS || iy >= ROWS) continue;
+    if (mask[iy * COLS + ix] < 1) return;
+  }
+  var env = Math.sin(Math.PI * f);
+  var hx = x0 + dx * len * f,
+    hy = y0 + dy * len * f;
+  put(hx, hy, C.foam, env, cy);
+  for (var i = 1; i <= trail; i++) {
+    var k = 1 - i / (trail + 1);
+    put(
+      hx - dx * CW * i,
+      hy - dy * CW * i,
+      i < 3 ? C.cream : i < 6 ? C.sun : C.amber,
+      env * (0.25 + 0.6 * k),
+      cy,
+    );
+  }
+}
 function sprites(t, cy) {
   var top = cy - 0.5,
     bot = cy + 0.5;
+
+  if (top < HZ) shootingStar(t, cy);
 
   // now and then a plane: high in the sunset, and low over the night city
   var span = 2 * A + 1.5;
@@ -870,12 +935,15 @@ function sprites(t, cy) {
 // Rects are cached in document coordinates, so a frame never reads layout.
 var calmEls = [];
 var calmRects = [];
+var cardEls = [];
+var cardRects = [];
 var range = document.createRange();
 var frozenShift = 0;
 function collect() {
   calmEls = Array.prototype.slice.call(
     document.querySelectorAll('[data-calm]'),
   );
+  cardEls = Array.prototype.slice.call(document.querySelectorAll('.card'));
 }
 function stampRect(left, top, right, bottom, pad, rmp) {
   var x0 = left - pad - rmp,
@@ -897,6 +965,21 @@ function stampRect(left, top, right, bottom, pad, rmp) {
       var i = iy * COLS + ix;
       if (m < mask[i]) mask[i] = m;
     }
+  }
+}
+// Cards are opaque: cells wholly inside one (clear of its rounded corners)
+// are never seen, so a frame skips them.
+var CARD_R = 10;
+function buildHidden(scrollY) {
+  hid.fill(0);
+  for (var k = 0; k < cardRects.length; k++) {
+    var r = cardRects[k];
+    var c0 = Math.max(0, Math.ceil((r[0] + CARD_R) / CELL)),
+      c1 = Math.min(COLS, Math.floor((r[2] - CARD_R) / CELL));
+    var r0 = Math.max(0, Math.ceil((r[1] - scrollY + CARD_R) / CELL)),
+      r1 = Math.min(ROWS, Math.floor((r[3] - scrollY - CARD_R) / CELL));
+    for (var iy = r0; iy < r1; iy++)
+      hid.fill(1, iy * COLS + c0, iy * COLS + c1);
   }
 }
 function buildMask(scrollY) {
@@ -930,26 +1013,21 @@ function measure() {
         rs[j].bottom + off,
       ]);
   }
+  cardRects = [];
+  for (var c = 0; c < cardEls.length; c++) {
+    var cr = cardEls[c].getBoundingClientRect();
+    cardRects.push([cr.left, cr.top + off, cr.right, cr.bottom + off]);
+  }
   docH = pageEl.offsetHeight;
   var maxY = Math.max(1, docH - H);
-  var hero = document.querySelector('.hero'),
-    work = document.getElementById('work'),
-    now = document.querySelector('.now-section');
-  var wTop = docTop(work, off),
-    wEnd = wTop + work.offsetHeight,
-    nTop = docTop(now, off);
   camera = makeCamera(
-    buildAnchors(
-      [
-        [0, CY_TOP],
-        [hero.offsetHeight * 0.3, CY_TOP + 0.1],
-        [wTop - H * 0.05, W < 600 ? 2.22 : 2.1],
-        [wEnd - H * 1.05, W < 600 ? 2.46 : 2.34],
-        [nTop - H * 0.5, 2.62],
-        [maxY, CY_BOT],
-      ],
-      maxY,
-    ),
+    sceneAnchors({
+      W: W,
+      H: H,
+      wTop: docTop(document.getElementById('work'), off),
+      nTop: docTop(document.querySelector('.now-section'), off),
+      maxY: maxY,
+    }),
   );
 }
 
@@ -976,20 +1054,34 @@ var buckets = [];
 for (var bi = 0; bi < NC * LV; bi++) buckets.push([]);
 function render(t, scrollY) {
   var cy = camera(scrollY);
+  if (cy - 0.5 < C_NEAR + 0.1) cachePuffs(t);
+  if (cy + 0.5 > GROUND) cacheWater(t);
+  buildHidden(scrollY);
   for (var iy = 0; iy < ROWS; iy++) {
     var wy = cy - 0.5 + (iy + 0.5) * CW;
     for (var ix = 0; ix < COLS; ix++) {
-      var wx = -A + (ix + 0.5) * CW;
-      sample(wx, wy, ix, iy, t, BAYER[(iy & 3) * 4 + (ix & 3)]);
       var i = iy * COLS + ix;
+      if (hid[i]) {
+        vv[i] = 0;
+        continue;
+      }
+      sample(
+        -A + (ix + 0.5) * CW,
+        wy,
+        ix,
+        iy,
+        t,
+        BAYER[(iy & 3) * 4 + (ix & 3)],
+      );
       ci[i] = oc;
       vv[i] = ov;
     }
   }
-  sprites(t, cy);
   buildMask(scrollY);
+  sprites(t, cy);
   for (var b = 0; b < buckets.length; b++) buckets[b].length = 0;
   for (var k = 0; k < N; k++) {
+    if (hid[k]) continue;
     var cap = 0.07 + 0.93 * mask[k];
     var v = vv[k] < cap ? vv[k] : cap;
     if (v < 0.035) continue;
@@ -1078,14 +1170,19 @@ function start() {
     return;
   }
 
+  // Scrolling redraws on every frame so the scene keeps pace with the page;
+  // when still, the animation steps at 30 fps.
   var t0 = performance.now(),
     raf = 0,
-    lastDraw = -Infinity;
+    lastDraw = -Infinity,
+    lastY = NaN;
   function frame(now) {
     raf = requestAnimationFrame(frame);
-    if (now - lastDraw < FRAME_MS - 1) return;
+    var y = scrollPos();
+    if (y === lastY && now - lastDraw < FRAME_MS - 1) return;
     lastDraw = now;
-    render(Math.floor(((now - t0) / 1000) * 30) / 30, scrollPos());
+    lastY = y;
+    render(Math.floor(((now - t0) / 1000) * 30) / 30, y);
   }
   function play() {
     if (!raf) {

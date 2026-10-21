@@ -4,154 +4,195 @@ import '../styles/home.css';
 ---
 
 <Base bodyClass="portfolio">
-  <div class="page-bg" aria-hidden="true">
-    <div
-      data-noise-field
-      data-mode="warp"
-      data-color="#000000"
-      data-alpha="0.12"
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="gauge" aria-hidden="true">
+    <i class="gauge-scale"></i><span class="gauge-read" id="gauge">3,000 m</span
     >
-    </div>
   </div>
-  <a class="skip-link" href="#work">Skip to work</a>
-  <header class="site-header">
-    <a class="wordmark" href="/" aria-label="Varun Lohade, home"
-      >varun<span>lohade</span><b>.</b></a
-    >
-    <nav aria-label="Main navigation">
-      <a href="mailto:varunlohade@gmail.com" class="nav-contact"
-        >Say hello <span aria-hidden="true">↗</span></a
+  <div id="page">
+    <a class="skip-link" href="#work">Skip to work</a>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="Varun Lohade, home" data-calm
+        >varun<span>lohade</span><b>.</b></a
       >
-    </nav>
-  </header>
-  <main>
-    <section class="hero" aria-labelledby="hero-heading">
-      <div class="hero-copy">
-        <p class="eyebrow">Software Engineer</p>
-        <h1 id="hero-heading">Building experiences people love.</h1>
-        <p class="hero-description">
-          Mostly software. Sometimes hardware.<br />Most times dad jokes.
-        </p>
-        <a class="hero-cta" href="#work"
-          >Explore my work <span aria-hidden="true">↓</span></a
+      <nav aria-label="Main navigation">
+        <a href="mailto:varunlohade@gmail.com" class="nav-contact"
+          >Say hello <span aria-hidden="true">↗</span></a
         >
-      </div>
-    </section>
-    <div class="page-content">
-      <section id="work" class="work-section" aria-labelledby="work-heading">
-        <div class="section-intro">
-          <p class="eyebrow">01 / WORK</p><h2 id="work-heading">
-            A few things<br />I’ve worked on.
-          </h2><p>
-            Mobile apps, AI tools, crypto, and a robotic arm. I like figuring
-            out how the pieces fit together.
+      </nav>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-heading">
+        <div class="hero-copy">
+          <p class="eyebrow" data-calm>Full Stack Engineer</p>
+          <h1 id="hero-heading" data-calm>Building experiences people love.</h1>
+          <p class="hero-description" data-calm>
+            Mostly software. Sometimes hardware.<br />Most times dad jokes.
           </p>
-        </div>
-        <div class="work-list">
-          <a class="work-item" href="https://avici.money"
-            ><span class="work-number">01</span><div>
-              <span class="project-type">CRYPTO · FINTECH</span><h3>
-                Avici<span aria-hidden="true">↗</span>
-              </h3><p>
-                A crypto-backed credit card — spend your crypto anywhere cards
-                work.<br /><strong class="stat-line"
-                  ><span>Raised $3.5M</span>{' '}<span>· $700k+ revenue</span>{
-                    ' '
-                  }<span>· $70M+ in transactions</span><br /><span
-                    >200k+ downloads</span
-                  >{' '}<span>· ~40% M3 spend retention</span></strong
-                >
-              </p><p>
-                Former cofounder & founding engineer. Built the entire app solo,
-                from scratch — Flutter and backend. Shipped AI agents in Slack
-                for support, design accountability, smarter research, and bug
-                fixes.
-              </p>
-            </div></a
+          <a class="hero-cta" href="#work"
+            >Explore my work <span aria-hidden="true">↓</span></a
           >
-          <div class="work-item">
-            <span class="work-number">02</span><div>
-              <span class="project-type">3D · WEB · CONCEPT</span><a
-                class="card-thumb"
-                href="https://workshop.varunlohade.com"
-                ><img
-                  src="/art/backdrop.png"
-                  alt="My old 3D workshop homepage: a pixel-art desk with a laptop under a tree, overlooking a river city"
-                  width="1672"
-                  height="941"
-                  loading="lazy"
-                /></a
-              ><h3>
-                <a href="https://workshop.varunlohade.com"
-                  >The workshop portfolio<span aria-hidden="true">↗</span></a
-                >
-              </h3><p>
-                My old homepage: a living 3D workshop built with Three.js, robot
-                arm and all.<br />It went viral — <a
-                  class="stat"
-                  href="https://x.com/orseliyas/status/2097307376143773730"
-                  >200k+ views on X ↗</a
-                >
-              </p>
-            </div>
-          </div>
-          <a class="work-item" href="https://github.com/varunlohade/fixmahbug"
-            ><span class="work-number">03</span><div>
-              <span class="project-type">AI · DEVELOPER TOOLS</span><h3>
-                fixmahbug<span aria-hidden="true">↗</span>
-              </h3><p>
-                A tool that lets teammates request small bug fixes, with Claude
-                working in the project’s codebase.
-              </p>
-            </div></a
-          >
-          <div class="work-item">
-            <span class="work-number">04</span><div>
-              <span class="project-type">ROBOTICS · EXPERIMENT</span><h3>
-                The robotic arm
-              </h3><p>
-                Teaching a machine to move with language.<br />An ongoing
-                experiment.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
-      <section class="now-section" aria-labelledby="now-heading">
-        <div>
-          <p class="eyebrow">02 / NOW</p><h2 id="now-heading">
-            What I’m<br />exploring.
-          </h2>
-        </div><dl>
-          <div>
-            <dt>Learning</dt><dd>
-              <em>Modern Robotics</em> by Kevin Lynch, Northwestern.
-            </dd>
-          </div><div>
-            <dt>Exploring</dt><dd>
-              Agents, on-chain finance, and machines that move.
-            </dd>
+      <div class="page-content">
+        <section class="split build-section" aria-labelledby="build-heading">
+          <div class="section-intro">
+            <p class="eyebrow" data-calm>01 / BUILD</p>
+            <h2 id="build-heading" data-calm>What I build.</h2>
           </div>
-        </dl>
-      </section>
-      <footer class="portfolio-footer">
-        <div>
-          <p>Have an idea you want to build?</p><a
-            class="footer-hello"
-            href="mailto:varunlohade@gmail.com"
-            >Let’s talk.<span aria-hidden="true">↗</span></a
+          <dl class="card panel">
+            <div>
+              <dt>Full-stack apps</dt><dd>
+                Mobile (Flutter) and backend, from idea to App Store.
+              </dd>
+            </div><div>
+              <dt>AI products and agents</dt><dd>
+                Slack agents, and coding tools like fixmahbug.
+              </dd>
+            </div><div>
+              <dt>Crypto and fintech</dt><dd>
+                Cards, wallets, and on-chain finance.
+              </dd>
+            </div><div>
+              <dt>Robotics</dt><dd>Teaching machines to move with language.</dd>
+            </div>
+          </dl>
+        </section>
+        <section
+          id="work"
+          class="split work-section"
+          aria-labelledby="work-heading"
+        >
+          <div class="section-intro">
+            <p class="eyebrow" data-calm>02 / WORK</p>
+            <h2 id="work-heading" data-calm>
+              A few things<br />I’ve worked on.
+            </h2>
+            <p data-calm>
+              Mobile apps, AI tools, crypto, and a robotic arm. I like figuring
+              out how the pieces fit together.
+            </p>
+          </div>
+          <div class="work-list">
+            <article class="card work-item">
+              <span class="work-number">01</span><div>
+                <span class="project-type">CRYPTO · FINTECH</span><h3>
+                  <a href="https://avici.money"
+                    >Avici<span aria-hidden="true">↗</span></a
+                  >
+                </h3><p>
+                  A crypto-backed credit card — spend your crypto anywhere cards
+                  work.
+                </p><p class="stat-line">
+                  <span class="stat-row"
+                    ><span>Raised $3.5M</span><span>$700k+ revenue</span><span
+                      >$70M+ in transactions</span
+                    ></span
+                  ><span class="stat-row"
+                    ><span>200k+ downloads</span><span
+                      >~40% M3 spend retention</span
+                    ></span
+                  >
+                </p><p>
+                  Former cofounder & founding engineer. Built the entire app
+                  solo, from scratch — Flutter and backend. Shipped AI agents in
+                  Slack for support, design accountability, smarter research,
+                  and bug fixes.
+                </p><p>
+                  <a class="stat" href="https://download.avici.club"
+                    >Download Avici ↗</a
+                  >
+                </p>
+              </div>
+            </article>
+            <article class="card work-item">
+              <span class="work-number">02</span><div>
+                <span class="project-type">3D · WEB · CONCEPT</span><a
+                  class="card-thumb"
+                  href="https://workshop.varunlohade.com"
+                  ><img
+                    src="/art/backdrop.png"
+                    alt="My old 3D workshop homepage: a pixel-art desk with a laptop under a tree, overlooking a river city"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                  /></a
+                ><h3>
+                  <a href="https://workshop.varunlohade.com"
+                    >The workshop portfolio<span aria-hidden="true">↗</span></a
+                  >
+                </h3><p>
+                  My old homepage: a living 3D workshop built with Three.js,
+                  robot arm and all.<br />It went viral — <a
+                    class="stat"
+                    href="https://x.com/orseliyas/status/2097307376143773730"
+                    >200k+ views on X ↗</a
+                  >
+                </p>
+              </div>
+            </article>
+            <article class="card work-item">
+              <span class="work-number">03</span><div>
+                <span class="project-type">AI · DEVELOPER TOOLS</span><h3>
+                  <a href="https://github.com/varunlohade/fixmahbug"
+                    >fixmahbug<span aria-hidden="true">↗</span></a
+                  >
+                </h3><p>
+                  A tool that lets teammates request small bug fixes, with
+                  Claude working in the project’s codebase.
+                </p>
+              </div>
+            </article>
+            <article class="card work-item">
+              <span class="work-number">04</span><div>
+                <span class="project-type">ROBOTICS · EXPERIMENT</span><h3>
+                  The robotic arm
+                </h3><p>
+                  Teaching a machine to move with language.<br />An ongoing
+                  experiment.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section class="split now-section" aria-labelledby="now-heading">
+          <div class="section-intro">
+            <p class="eyebrow" data-calm>03 / NOW</p>
+            <h2 id="now-heading" data-calm>What I’m<br />exploring.</h2>
+          </div>
+          <dl class="card panel">
+            <div>
+              <dt>Learning</dt><dd>
+                <em>Modern Robotics</em> by Kevin Lynch, Northwestern.
+              </dd>
+            </div><div>
+              <dt>Exploring</dt><dd>
+                Agents, on-chain finance, and machines that move.
+              </dd>
+            </div>
+          </dl>
+        </section>
+        <footer class="portfolio-footer">
+          <p data-calm>Have an idea you want to build?</p>
+          <a class="footer-hello" href="mailto:varunlohade@gmail.com"
+            ><span data-calm>Let’s talk.</span><span
+              class="fh-arrow"
+              aria-hidden="true"
+              data-calm>↗</span
+            ></a
           >
-        </div><div class="footer-bottom">
-          <span>Varun Lohade</span><div>
-            <a href="https://github.com/varunlohade">GitHub ↗</a><a
-              href="https://medium.com/@varunlohade">Medium ↗</a
-            ><a href="mailto:varunlohade@gmail.com">Email ↗</a>
-          </div><a href="#hero-heading">Back to top ↑</a>
-        </div>
-      </footer>
-    </div>
-  </main>
+          <div class="card footer-bottom">
+            <span>Varun Lohade</span><div>
+              <a href="https://github.com/varunlohade">GitHub ↗</a><a
+                href="https://medium.com/@varunlohade">Medium ↗</a
+              ><a href="mailto:varunlohade@gmail.com">Email ↗</a>
+            </div><a href="#hero-heading">Back to top ↑</a>
+          </div>
+        </footer>
+      </div>
+    </main>
+  </div>
 </Base>
 <script>
-  import '../scripts/noise-field.mjs';
+  import '../scripts/sky-scene.mjs';
 </script>

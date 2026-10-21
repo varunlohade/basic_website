@@ -317,18 +317,10 @@ html.frozen #page {
   image-rendering: pixelated;
 }
 
-/* now */
-.now-section {
-  padding-top: 0;
-}
-.now-section .panel {
-  align-self: start;
-}
-
 /* footer */
 .portfolio-footer {
   margin: 0;
-  padding: 0 0 28px;
+  padding: 0 0 calc(28px + 30vh); /* room for the sea below the footer */
   border: 0;
   font-family: inherit;
   font-size: 1rem;
@@ -471,9 +463,6 @@ html.frozen #page {
     padding: 65px 0;
   }
   .build-section {
-    padding-top: 0;
-  }
-  .now-section {
     padding-top: 0;
   }
   .section-intro > p:last-child:not(.eyebrow) {

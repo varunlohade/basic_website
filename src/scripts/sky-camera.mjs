@@ -72,14 +72,14 @@ export const WORLD = {
 
 // Homepage scroll anchors. The descent is spread so the scene moves close
 // to page speed: clouds over the hero, the city as #work arrives, and the
-// sea from the moment the now section comes into view.
-export function sceneAnchors({ W, H, wTop, nTop, maxY }) {
+// sea from the moment the footer comes into view.
+export function sceneAnchors({ W, H, wTop, fTop, maxY }) {
   const phone = W < 600;
   return buildAnchors(
     [
       [0, WORLD.CY_TOP],
       [wTop - H * 0.05, phone ? 1.9 : 2.0],
-      [nTop - H, phone ? 2.75 : 2.7],
+      [fTop - H, phone ? 2.9 : 2.7],
       [maxY, WORLD.CY_BOT],
     ],
     maxY,

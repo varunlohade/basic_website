@@ -1020,7 +1020,7 @@ function measure() {
       W: W,
       H: H,
       wTop: docTop(document.getElementById('work'), off),
-      nTop: docTop(document.querySelector('.now-section'), off),
+      fTop: docTop(document.querySelector('.portfolio-footer'), off),
       maxY: maxY,
     }),
   );

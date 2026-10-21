@@ -49,8 +49,8 @@ test('camera hits anchors, clamps at the ends, and never goes back up', () => {
 
 // Homepage section positions measured at 1440x900 and 390x844.
 const LAYOUTS = {
-  desktop: { W: 1440, H: 900, wTop: 1232, nTop: 2794, docH: 3390 },
-  phone: { W: 390, H: 844, wTop: 1276, nTop: 3129, docH: 3725 },
+  desktop: { W: 1440, H: 900, wTop: 1232, fTop: 2846, docH: 3433 },
+  phone: { W: 390, H: 844, wTop: 1276, fTop: 3180, docH: 3692 },
 };
 
 for (const [name, l] of Object.entries(LAYOUTS)) {
@@ -78,8 +78,11 @@ for (const [name, l] of Object.entries(LAYOUTS)) {
         atWork + 0.5 > WORLD.GROUND - WORLD.MAX_BUILDING / 2,
       `city skyline in view when work arrives (cy ${atWork})`,
     );
-    const atNow = cam(l.nTop - l.H / 2);
-    assert.ok(atNow - 0.5 > WORLD.GROUND, `under water at now (cy ${atNow})`);
+    const atFooter = cam(l.fTop - l.H / 2);
+    assert.ok(
+      atFooter - 0.5 > WORLD.GROUND,
+      `under water at the footer (cy ${atFooter})`,
+    );
     assert.equal(cam(maxY), WORLD.CY_BOT);
   });
 }

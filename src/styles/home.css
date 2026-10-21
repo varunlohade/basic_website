@@ -145,16 +145,8 @@ html.frozen #page {
 }
 .hero-description {
   max-width: 430px;
-  margin-bottom: 0.75rem !important;
-  font-size: 1.0625rem;
-}
-.hero-freelance {
-  max-width: 430px;
   margin-bottom: 2rem !important;
-  font-size: 0.9375rem;
-}
-.hero-freelance a {
-  white-space: nowrap;
+  font-size: 1.0625rem;
 }
 .hero-cta {
   display: inline-flex;
